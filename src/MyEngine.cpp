@@ -1,6 +1,6 @@
 #include "../include/MyEngine.h"
 #include <iostream>
-#include <sstream>
+#include <sstream> 
 
 MyEngine::MyEngine() : SimpleGraphicsEngine()
 {
@@ -15,7 +15,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   ShaderManager::instance()->loadShader(
     "SHADER_PLAINTEXTURE",
     "../shaders/plaintextureshader.vert",
-    nullptr,
+    nullptr, 
     nullptr,
     nullptr,
     "../shaders/plaintextureshader.frag");

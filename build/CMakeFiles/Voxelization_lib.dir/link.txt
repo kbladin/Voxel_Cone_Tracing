@@ -1,2 +1,0 @@
-/usr/bin/ar cr libVoxelization_lib.a  CMakeFiles/Voxelization_lib.dir/src/MyEngine.cpp.o CMakeFiles/Voxelization_lib.dir/src/ShaderLoader.cpp.o CMakeFiles/Voxelization_lib.dir/src/SimpleGraphicsEngine.cpp.o
-/usr/bin/ranlib libVoxelization_lib.a

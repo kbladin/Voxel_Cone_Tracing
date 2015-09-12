@@ -1,2 +1,0 @@
-/Users/kbladin/Documents/C++projects/git_projects/Voxelization_OpenGL/build/CMakeFiles/Voxelization.dir
-/Users/kbladin/Documents/C++projects/git_projects/Voxelization_OpenGL/build/CMakeFiles/Voxelization_lib.dir
