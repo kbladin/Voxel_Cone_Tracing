@@ -2,6 +2,8 @@
 #include <iostream>
 #include <sstream> 
 
+Object3D* MyEngine::camera_;
+
 MyEngine::MyEngine() : SimpleGraphicsEngine()
 {
   // Shaders
@@ -24,14 +26,23 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   shader_plaintexture_ = ShaderManager::instance()->getShader("SHADER_PLAINTEXTURE");
  
   // FBO
-  fbo1 = new FBO3D(128);
-  fbo2 = new FBO3D(128);
-  fbo3 = new FBO3D(128);
+  fbo1_ = new FBO3D(128);
+  fbo2_ = new FBO3D(128);
+  fbo3_ = new FBO3D(128);
 
+  // Cameras
+  camera_ = new Object3D();
+  basic_cam_ = new PerspectiveCamera(window_);
+  slicer_camera_ = new OrthoCamera();
+
+  camera_->addChild(basic_cam_);
+
+  // Objects
   planet_ = new Planet();
   quad_ = new Quad();
   scene_->addChild(planet_);
   
+
   // Set callback functions
   glfwSetScrollCallback(window_, mouseScrollCallback);
   glfwSetKeyCallback(window_, keyCallback);
@@ -39,11 +50,16 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
 
 MyEngine::~MyEngine()
 {
+  delete camera_;
+  delete basic_cam_;
+  delete slicer_camera_;
+
   delete planet_;
   delete quad_;
-  delete fbo1;
-  delete fbo2;
-  delete fbo3;
+
+  delete fbo1_;
+  delete fbo2_;
+  delete fbo3_;
 }
 
 void MyEngine::update()
@@ -64,6 +80,8 @@ void MyEngine::update()
   }
 }
 
+static float hej = 4.1;
+
 void MyEngine::render()
 {
   SimpleGraphicsEngine::render();
@@ -72,27 +90,41 @@ void MyEngine::render()
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glClearColor(0.0, 0.0, 0.0, 1);
   
-  FBO3D::useFBO(fbo1, nullptr, nullptr);
+  FBO3D::useFBO(fbo1_, nullptr, nullptr);
 
   glDisable(GL_CULL_FACE);
   glEnable(GL_DEPTH_TEST);
  
-  for (int i = 0; i < fbo1->size_; ++i)
+  for (int i = 0; i < fbo1_->size_; ++i)
   {
-    glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_3D, fbo1->texid_, 0, i);
+    glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_3D, fbo1_->texid_, 0, i);
 
     //glDisable(GL_DEPTH_TEST);
     //background_space_->render(glm::mat4(), shader_phong_);
     
+    float scene_scale = 2;
+
+    slicer_camera_->render(
+      glm::mat4(),
+      shader_phong_,
+      -scene_scale, // left
+      scene_scale, // right
+      -scene_scale, // bottom
+      scene_scale, // top
+      scene_scale, // near
+      -scene_scale); // far
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     scene_->render(glm::mat4(), shader_phong_);
+
+    //hej += 0.0001;
 
     //view_space_->render(glm::mat4(), shader_phong_);
   }
 
 
 
-  FBO3D::useFBO(nullptr, fbo1, nullptr);
+  FBO3D::useFBO(nullptr, fbo1_, nullptr);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glDisable(GL_DEPTH_TEST);
   glUniform1i(glGetUniformLocation(shader_plaintexture_, "texUnit"), 0);

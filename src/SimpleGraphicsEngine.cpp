@@ -193,9 +193,8 @@ void TriangleMesh::render(glm::mat4 M, GLuint program_ID)
   glDisableVertexAttribArray(1);
 }
 
-AbstractCamera::AbstractCamera(GLFWwindow* window)
+AbstractCamera::AbstractCamera()
 {
-  window_ = window;  
   transform_matrix_ = glm::lookAt(
                                 glm::vec3(0.0f,0.0f,3.0f),
                                 glm::vec3(0.0f,0.0f,-1.0f),
@@ -215,45 +214,85 @@ void AbstractCamera::render(glm::mat4 M, GLuint program_ID)
 }
 
 PerspectiveCamera::PerspectiveCamera(GLFWwindow* window) :
-AbstractCamera(window)
+AbstractCamera()
 {
-  int width;
-  int height;
-  glfwGetWindowSize(window_, &width, &height);
-  float aspect = float(width)/height;
+  window_ = window;
+  
+  float aspect = 1;
+  if (window_)
+  {
+    int width;
+    int height;
+    glfwGetWindowSize(window_, &width, &height);
+    aspect = float(width)/height;
+  } 
+
   projection_transform_matrix_ = glm::perspective(45.0f, aspect, 0.1f, 100.0f);
 }
 
 void PerspectiveCamera::render(glm::mat4 M, GLuint program_ID)
 {
-  int width;
-  int height;
-  glfwGetWindowSize(window_, &width, &height);
-  float aspect = float(width)/height;
+  float aspect = 1;
+  if (window_)
+  {
+    int width;
+    int height;
+    glfwGetWindowSize(window_, &width, &height);
+    aspect = float(width)/height;
+  } 
+
   projection_transform_matrix_ = glm::perspective(45.0f, aspect, 0.1f, 100.0f);
   
   AbstractCamera::render(M, program_ID);
 }
 
 OrthoCamera::OrthoCamera(GLFWwindow* window) :
-  AbstractCamera(window)
+  AbstractCamera()
 {
-  int width;
-  int height;
-  glfwGetWindowSize(window_, &width, &height);
-  float aspect = float(width)/height;
+  window_ = window;
+  
+  float aspect = 1;
+  if (window_)
+  {
+    int width;
+    int height;
+    glfwGetWindowSize(window_, &width, &height);
+    aspect = float(width)/height;
+  } 
+  
   projection_transform_matrix_ = glm::ortho(-aspect, aspect, -1.0f, 1.0f, -100.0f, 100.0f);
 }
 
 void OrthoCamera::render(glm::mat4 M, GLuint program_ID)
 {
-  int width;
-  int height;
-  glfwGetWindowSize(window_, &width, &height);
-  float aspect = float(width)/height;
+  
+  float aspect = 1;
+  if (window_)
+  {
+    int width;
+    int height;
+    glfwGetWindowSize(window_, &width, &height);
+    aspect = float(width)/height;
+  } 
+
+
   projection_transform_matrix_ = glm::ortho(-aspect, aspect, -1.0f, 1.0f, -100.0f, 100.0f);
   
   AbstractCamera::render(M, program_ID);
+}
+
+void OrthoCamera::render(
+  glm::mat4 M,
+  GLuint program_ID,
+  float left,
+  float right,
+  float bottom,
+  float top,
+  float near,
+  float far)
+{
+    projection_transform_matrix_ = glm::ortho(left, right, bottom, top, near, far);
+    AbstractCamera::render(M, program_ID);
 }
 
 LightSource::LightSource()
@@ -274,8 +313,8 @@ void LightSource::render(glm::mat4 M, GLuint program_ID)
   glUniform3f(glGetUniformLocation(program_ID, "lightColor"), color_.r, color_.g, color_.b);
 }
 
-Object3D* SimpleGraphicsEngine::camera_;
-Object3D* SimpleGraphicsEngine::viewspace_ortho_camera_;
+//Object3D* SimpleGraphicsEngine::camera_;
+//Object3D* SimpleGraphicsEngine::viewspace_ortho_camera_;
 
 SimpleGraphicsEngine::SimpleGraphicsEngine()
 {
@@ -286,12 +325,12 @@ SimpleGraphicsEngine::~SimpleGraphicsEngine()
 {
   glfwTerminate();
   delete scene_;
-  delete view_space_;
-  delete background_space_;
+  //delete view_space_;
+  //delete background_space_;
     
-  delete camera_;
-  delete basic_cam_;
-  delete viewspace_ortho_camera_;
+  //delete camera_;
+  //delete basic_cam_;
+  //delete viewspace_ortho_camera_;
   //delete background_ortho_cam_;
 }
 
@@ -337,19 +376,19 @@ bool SimpleGraphicsEngine::initialize()
   ShaderManager::instance();
 
   scene_ = new Object3D();
-  view_space_ = new Object3D();
-  background_space_ = new Object3D();
+  //view_space_ = new Object3D();
+  //background_space_ = new Object3D();
   
-  camera_ = new Object3D();
-  viewspace_ortho_camera_ = new Object3D();
-  basic_cam_ = new PerspectiveCamera(window_);
+  //camera_ = new Object3D();
+  //viewspace_ortho_camera_ = new Object3D();
+  //basic_cam_ = new PerspectiveCamera(window_);
   //background_ortho_cam_ = new OrthoCamera(ShaderManager::instance()->getShader("SHADER_BACKGROUND"), window_);
   
-  camera_->addChild(basic_cam_);
+  //camera_->addChild(basic_cam_);
   //viewspace_ortho_camera_->addChild(background_ortho_cam_);
-  scene_->addChild(camera_);
+  //scene_->addChild(camera_);
 
-  view_space_->addChild(viewspace_ortho_camera_);
+  //view_space_->addChild(viewspace_ortho_camera_);
   return true;
 }
 

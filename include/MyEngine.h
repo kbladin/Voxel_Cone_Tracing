@@ -30,10 +30,16 @@ public:
 private:
 	// FBO
 	// What the hell? If i move these declarations below the others ot does not work??!!
-	FBO3D* fbo1;
-	FBO3D* fbo2;
-	FBO3D* fbo3;
+	FBO3D* fbo1_;
+	FBO3D* fbo2_;
+	FBO3D* fbo3_;
 
+	// Cameras
+	static Object3D* camera_;
+	OrthoCamera* slicer_camera_;
+	PerspectiveCamera* basic_cam_;
+
+	// Objects
 	Planet* planet_;
 	Quad* quad_;
 

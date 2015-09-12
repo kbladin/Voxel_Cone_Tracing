@@ -79,23 +79,38 @@ namespace SGE {
   //! AbstractCamera
   class AbstractCamera : public Object3D {
   public:
-    AbstractCamera(GLFWwindow* window);
+    AbstractCamera();
     virtual void render(glm::mat4 M, GLuint program_ID) = 0;
   protected:  
     glm::mat4 projection_transform_matrix_;
-    GLFWwindow* window_;
+
   };
   //! PerspectiveCamera
   class PerspectiveCamera : public AbstractCamera {
   public:
-    PerspectiveCamera(GLFWwindow* window);
+    PerspectiveCamera(GLFWwindow* window = nullptr);
     virtual void render(glm::mat4 M, GLuint program_ID);
+  private:
+    GLFWwindow* window_;
   };
   //! OrthoCamera
   class OrthoCamera : public AbstractCamera {
   public:
-    OrthoCamera(GLFWwindow* window);
-    virtual void render(glm::mat4 M, GLuint program_ID);
+    OrthoCamera(GLFWwindow* window = nullptr);
+    virtual void render(
+      glm::mat4 M,
+      GLuint program_ID);
+    virtual void render(
+      glm::mat4 M,
+      GLuint program_ID,
+      float left,
+      float right,
+      float bottom,
+      float top,
+      float near,
+      float far);
+  private:
+    GLFWwindow* window_;
   };
 
   //! LightSource
@@ -126,18 +141,18 @@ namespace SGE {
     double dt_;
     
     Object3D* scene_;
-    Object3D* view_space_;
-    Object3D* background_space_;
-    static Object3D* camera_;
-    static Object3D* viewspace_ortho_camera_;
+    //Object3D* view_space_;
+    //Object3D* background_space_;
+    //static Object3D* camera_;
+    //static Object3D* viewspace_ortho_camera_;
     
   private:
     bool initialize();
     
     double time_;
     
-    PerspectiveCamera* basic_cam_;
-    OrthoCamera* background_ortho_cam_;
+    //PerspectiveCamera* basic_cam_;
+    //OrthoCamera* background_ortho_cam_;
   };
 
   class FBO

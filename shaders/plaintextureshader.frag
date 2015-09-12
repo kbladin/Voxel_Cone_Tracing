@@ -6,5 +6,5 @@ out vec4 color;
 
 void main(void)
 {
-    color = texture(texUnit, vec3(texCoord.x,texCoord.y,59));
+    color = texture(texUnit, vec3(texCoord.x,texCoord.y,0.5));
 }
