@@ -11,6 +11,7 @@
 #include <gl/glfw3.h>
 
 #include "../include/ShaderLoader.h"
+#include "../include/MeshLoader.h"
 
 using namespace SGE;
 
@@ -109,6 +110,20 @@ TriangleMesh::TriangleMesh() : AbstractMesh()
   initialize();
 }
 
+TriangleMesh::TriangleMesh(const char* file_path) : AbstractMesh()
+{
+  std::vector<glm::vec2> tmp_uv;
+
+  loadMesh_assimp(
+  file_path,
+  elements_,
+  vertices_, 
+  tmp_uv,
+  normals_);
+
+  initialize();
+}
+
 TriangleMesh::TriangleMesh(
            std::vector<glm::vec3> vertices,
            std::vector<glm::vec3> normals,
@@ -196,7 +211,7 @@ void TriangleMesh::render(glm::mat4 M, GLuint program_ID)
 AbstractCamera::AbstractCamera()
 {
   transform_matrix_ = glm::lookAt(
-                                glm::vec3(0.0f,0.0f,3.0f),
+                                glm::vec3(0.0f,0.0f,0.0f),
                                 glm::vec3(0.0f,0.0f,-1.0f),
                                 glm::vec3(0.0f,1.0f,0.0f));
 }
@@ -567,14 +582,22 @@ FBO3D::FBO3D(int size)
   glGenTextures(1, &texid_);
   fprintf(stderr, "%i \n", texid_);
   glBindTexture(GL_TEXTURE_3D, texid_);
+
+
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_REPEAT);
   
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
+  glTexStorage3D(GL_TEXTURE_3D, 10, GL_RGBA32F, size, size, size);
   glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, size, size, size, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+  
+  glGenerateMipmap(GL_TEXTURE_3D); // Allocate the mipmaps
+
   glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_3D, texid_, 0, 0);
+
 
   // Renderbuffer
   // initialize depth renderbuffer

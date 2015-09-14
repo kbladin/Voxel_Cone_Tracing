@@ -21,14 +21,30 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
     nullptr,
     nullptr,
     "../shaders/plaintextureshader.frag");
+  ShaderManager::instance()->loadShader(
+    "SHADER_SIMPLEVOLUME",
+    "../shaders/simplevolumerenderer.vert",
+    nullptr, 
+    nullptr,
+    nullptr,
+    "../shaders/simplevolumerenderer.frag");
+  ShaderManager::instance()->loadShader(
+    "SHADER_WORLDPOSITIONOUTPUT",
+    "../shaders/worldpositionoutputshader.vert",
+    nullptr, 
+    nullptr,
+    nullptr,
+    "../shaders/worldpositionoutputshader.frag");
 
   shader_phong_ = ShaderManager::instance()->getShader("SHADER_PHONG");
   shader_plaintexture_ = ShaderManager::instance()->getShader("SHADER_PLAINTEXTURE");
- 
+  shader_simplevolume_ = ShaderManager::instance()->getShader("SHADER_SIMPLEVOLUME");
+  shader_worldpositionoutput_ = ShaderManager::instance()->getShader("SHADER_WORLDPOSITIONOUTPUT");
+
   // FBO
-  fbo1_ = new FBO3D(128);
-  fbo2_ = new FBO3D(128);
-  fbo3_ = new FBO3D(128);
+  fbo3D_ = new FBO3D(128);
+  fbo1_ = new FBO(640, 480, 0);
+  fbo2_ = new FBO(640, 480, 0);
 
   // Cameras
   camera_ = new Object3D();
@@ -40,12 +56,51 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   // Objects
   planet_ = new Planet();
   quad_ = new Quad();
+  cube_ = new TriangleMesh("../data/meshes/cube.obj");
   scene_->addChild(planet_);
   
-
   // Set callback functions
   glfwSetScrollCallback(window_, mouseScrollCallback);
   glfwSetKeyCallback(window_, keyCallback);
+
+
+  // Voxelize the mesh
+
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glClearColor(0.0, 0.0, 0.0, 1);
+  
+
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo3D_->fb_);
+  glViewport(0, 0, fbo3D_->size_, fbo3D_->size_);
+
+
+  glDisable(GL_CULL_FACE);
+  glEnable(GL_DEPTH_TEST);
+ 
+  for (int i = 0; i < fbo3D_->size_; ++i)
+  {
+    glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_3D, fbo3D_->texid_, 0, i);    
+    float scene_scale = 1;
+
+    slicer_camera_->render(
+      glm::mat4(),
+      shader_phong_,
+      -scene_scale, // left
+      scene_scale, // right
+      -scene_scale, // bottom
+      scene_scale, // top
+      scene_scale - (float)i / fbo3D_->size_ * scene_scale * 2, // near
+      scene_scale - (float)(i + 1) / fbo3D_->size_ * scene_scale * 2); // far
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    scene_->render(glm::mat4(), shader_phong_);
+  }
+
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_3D, fbo3D_->texid_);
+  glGenerateMipmap(GL_TEXTURE_3D);
+
+
 }
 
 MyEngine::~MyEngine()
@@ -56,10 +111,11 @@ MyEngine::~MyEngine()
 
   delete planet_;
   delete quad_;
+  delete cube_;
 
+  delete fbo3D_;
   delete fbo1_;
   delete fbo2_;
-  delete fbo3_;
 }
 
 void MyEngine::update()
@@ -80,55 +136,112 @@ void MyEngine::update()
   }
 }
 
-static float hej = 4.1;
-
 void MyEngine::render()
 {
   SimpleGraphicsEngine::render();
-
-
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  glClearColor(0.0, 0.0, 0.0, 1);
   
-  FBO3D::useFBO(fbo1_, nullptr, nullptr);
 
-  glDisable(GL_CULL_FACE);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  int w, h;
+  glfwGetWindowSize(window_, &w, &h);
+
+
+  // Render back size of cube
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo1_->fb_);
+  glViewport(0, 0, fbo1_->width_, fbo1_->height_);
+
+  glClearColor(0.0, 0.0, 0.0, 1);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  
+  glEnable(GL_CULL_FACE);
+  glCullFace(GL_FRONT);
   glEnable(GL_DEPTH_TEST);
- 
-  for (int i = 0; i < fbo1_->size_; ++i)
-  {
-    glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_3D, fbo1_->texid_, 0, i);
 
-    //glDisable(GL_DEPTH_TEST);
-    //background_space_->render(glm::mat4(), shader_phong_);
-    
-    float scene_scale = 2;
-
-    slicer_camera_->render(
+  camera_->render(
       glm::mat4(),
-      shader_phong_,
-      -scene_scale, // left
-      scene_scale, // right
-      -scene_scale, // bottom
-      scene_scale, // top
-      scene_scale, // near
-      -scene_scale); // far
-
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    scene_->render(glm::mat4(), shader_phong_);
-
-    //hej += 0.0001;
-
-    //view_space_->render(glm::mat4(), shader_phong_);
-  }
+      shader_worldpositionoutput_);
+  cube_->render(glm::mat4(), shader_worldpositionoutput_);
 
 
+  // Render front size of cube
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo2_->fb_);
+  glViewport(0, 0, fbo2_->width_, fbo2_->height_);
 
-  FBO3D::useFBO(nullptr, fbo1_, nullptr);
+  glClearColor(0.0, 0.0, 0.0, 1);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  
+  glEnable(GL_CULL_FACE);
+  glCullFace(GL_BACK);
+  glEnable(GL_DEPTH_TEST);
+
+  camera_->render(
+      glm::mat4(),
+      shader_worldpositionoutput_);
+  cube_->render(glm::mat4(), shader_worldpositionoutput_);
+
+
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_3D, fbo3D_->texid_);
+
+  glActiveTexture(GL_TEXTURE1);
+  glBindTexture(GL_TEXTURE_2D, fbo1_->texid_);
+
+
+  glActiveTexture(GL_TEXTURE2);
+  glBindTexture(GL_TEXTURE_2D, fbo2_->texid_);
+
+
+  // Render to screen
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glViewport(0, 0, w * 2, h * 2);
+
+
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glDisable(GL_DEPTH_TEST);
-  glUniform1i(glGetUniformLocation(shader_plaintexture_, "texUnit"), 0);
-  quad_->render(glm::mat4(), shader_plaintexture_);
+  glDisable(GL_CULL_FACE);
+
+
+  glUseProgram(shader_simplevolume_);
+  glUniform1i(glGetUniformLocation(shader_simplevolume_, "textureSize"), fbo3D_->size_);
+  glUniform1i(glGetUniformLocation(shader_simplevolume_, "texUnit3D"), 0);
+  glUniform1i(glGetUniformLocation(shader_simplevolume_, "texUnitBackCube"), 1);
+  glUniform1i(glGetUniformLocation(shader_simplevolume_, "texUnitFrontCube"), 2);
+  camera_->render(
+      glm::mat4(),
+      shader_simplevolume_);
+  quad_->render(glm::mat4(), shader_simplevolume_);
+
+/*
+  // Render to screen
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glViewport(0, 0, w * 2, h * 2);
+
+  glUseProgram(shader_phong_);
+  glEnable(GL_DEPTH_TEST);
+  glEnable(GL_CULL_FACE);
+
+
+  camera_->render(
+      glm::mat4(),
+      shader_phong_);
+  scene_->render(glm::mat4(), shader_phong_);
+*/
 }
 
 void MyEngine::mouseScrollCallback(GLFWwindow * window, double dx, double dy)
@@ -148,14 +261,15 @@ void MyEngine::keyCallback(
 void MyEngine::updateCameraController()
 {
     if (glfwGetKey(window_, GLFW_KEY_D) == GLFW_PRESS)
-      roll += 0.1;
+      roll += 0.02;
     if (glfwGetKey(window_, GLFW_KEY_A) == GLFW_PRESS)
-      roll -= 0.1;
+      roll -= 0.02;
     if (glfwGetKey(window_, GLFW_KEY_S) == GLFW_PRESS)
-      pitch += 0.1;
+      pitch += 0.02;
     if (glfwGetKey(window_, GLFW_KEY_W) == GLFW_PRESS)
-      pitch -= 0.1;
+      pitch -= 0.02;
 
+    //slicer_camera_->transform_matrix_ = glm::translate(glm::mat4(), glm::vec3(-roll,0.0f,-pitch));
     camera_->transform_matrix_ = glm::translate(glm::mat4(), glm::vec3(-roll,0.0f,-pitch));
 }
 
@@ -165,10 +279,10 @@ Quad::Quad()
   std::vector<glm::vec3> normals;
   std::vector<unsigned short> elements;
 
-  positions.push_back(glm::vec3(-1,-1,0));
-  positions.push_back(glm::vec3(1,-1,0));
-  positions.push_back(glm::vec3(1,1,0));
-  positions.push_back(glm::vec3(-1,1,0));  
+  positions.push_back(glm::vec3(-1,-1,1));
+  positions.push_back(glm::vec3(1,-1,1));
+  positions.push_back(glm::vec3(1,1,1));
+  positions.push_back(glm::vec3(-1,1,1));  
 
   normals.push_back(glm::vec3(0,0,1));
   normals.push_back(glm::vec3(0,0,1));
@@ -197,10 +311,12 @@ Planet::Planet()
   std::vector<glm::vec3> normals;
   std::vector<unsigned short> elements;
   
-  buildIcosahedron(1.5, &positions, &normals, &elements);
+  buildIcosahedron(0.7, &positions, &normals, &elements);
 
-  mesh_ = new TriangleMesh(positions, normals, elements);
+  mesh_ = new TriangleMesh("../data/meshes/bunny.obj");
+  //mesh_ = new TriangleMesh(positions, normals, elements);
   this->addChild(mesh_);
+  this->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(0.3,0.3,0.3));
 }
 
 Planet::~Planet()

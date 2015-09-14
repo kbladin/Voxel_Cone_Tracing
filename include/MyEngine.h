@@ -29,10 +29,10 @@ public:
 	void updateCameraController();
 private:
 	// FBO
-	// What the hell? If i move these declarations below the others ot does not work??!!
-	FBO3D* fbo1_;
-	FBO3D* fbo2_;
-	FBO3D* fbo3_;
+	// What the hell? If i move these declarations below the others it does not work??!!
+	FBO3D* fbo3D_;
+	FBO* fbo1_;
+	FBO* fbo2_;
 
 	// Cameras
 	static Object3D* camera_;
@@ -42,6 +42,7 @@ private:
 	// Objects
 	Planet* planet_;
 	Quad* quad_;
+	TriangleMesh* cube_;
 
 	float roll, pitch, yaw;
 
@@ -51,6 +52,8 @@ private:
 	// Shaders
 	GLuint shader_phong_;
 	GLuint shader_plaintexture_;
+	GLuint shader_simplevolume_;
+	GLuint shader_worldpositionoutput_;
 };
 
 class Quad : public Object3D {

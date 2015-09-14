@@ -63,6 +63,7 @@ namespace SGE {
   class TriangleMesh : public AbstractMesh{
   public:
     TriangleMesh();
+    TriangleMesh(const char* file_path);
     TriangleMesh(std::vector<glm::vec3> vertices,
                  std::vector<glm::vec3> normals,
                  std::vector<unsigned short> elements);
@@ -163,7 +164,7 @@ namespace SGE {
 
     static void useFBO(FBO *out, FBO *in1, FBO *in2);
     static void CHECK_FRAMEBUFFER_STATUS();
-  private:
+
     GLuint texid_;
     GLuint fb_;
     GLuint rb_;
