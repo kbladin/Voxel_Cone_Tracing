@@ -1,6 +1,11 @@
 #include "../include/MyEngine.h"
+
+#include <glm/gtx/transform.hpp>
+
 #include <iostream>
 #include <sstream> 
+#include <sys/timeb.h>
+
 
 Object3D* MyEngine::camera_;
 
@@ -9,11 +14,11 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   // Shaders
   ShaderManager::instance()->loadShader(
     "SHADER_PHONG",
-    "../shaders/simple.vert",
+    "../shaders/phong.vert",
     nullptr,
     nullptr,
     nullptr,
-    "../shaders/simple.frag");
+    "../shaders/phong.frag");
   ShaderManager::instance()->loadShader(
     "SHADER_PLAINTEXTURE",
     "../shaders/plaintextureshader.vert",
@@ -35,14 +40,25 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
     nullptr,
     nullptr,
     "../shaders/worldpositionoutputshader.frag");
+  ShaderManager::instance()->loadShader(
+    "SHADER_GLOBALRENDERER",
+    "../shaders/globalrenderer.vert",
+    nullptr, 
+    nullptr,
+    nullptr,
+    "../shaders/globalrenderer.frag");
 
   shader_phong_ = ShaderManager::instance()->getShader("SHADER_PHONG");
   shader_plaintexture_ = ShaderManager::instance()->getShader("SHADER_PLAINTEXTURE");
   shader_simplevolume_ = ShaderManager::instance()->getShader("SHADER_SIMPLEVOLUME");
   shader_worldpositionoutput_ = ShaderManager::instance()->getShader("SHADER_WORLDPOSITIONOUTPUT");
+  shader_global_ = ShaderManager::instance()->getShader("SHADER_GLOBALRENDERER");
+
+  yaw_goal = pitch_goal = roll_goal = 0;
+  yaw = pitch = roll = 0;
 
   // FBO
-  fbo3D_ = new FBO3D(128);
+  fbo3D_ = new FBO3D(64);
   fbo1_ = new FBO(640, 480, 0);
   fbo2_ = new FBO(640, 480, 0);
 
@@ -57,22 +73,25 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   planet_ = new Planet();
   quad_ = new Quad();
   cube_ = new TriangleMesh("../data/meshes/cube.obj");
+  floor_ = new TriangleMesh("../data/meshes/floor.obj");
+  floor_->transform_matrix_ = glm::rotate(30.0f, glm::vec3(1.0f,0.0f,0.0f));
+  floor_->transform_matrix_ = glm::translate(glm::vec3(0.0f,-0.5f,0.0f)) * floor_->transform_matrix_;
   scene_->addChild(planet_);
+  scene_->addChild(floor_);
   
   // Set callback functions
   glfwSetScrollCallback(window_, mouseScrollCallback);
   glfwSetKeyCallback(window_, keyCallback);
-
+  glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
   // Voxelize the mesh
 
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  glClearColor(0.0, 0.0, 0.0, 1);
-  
 
   glBindFramebuffer(GL_FRAMEBUFFER, fbo3D_->fb_);
   glViewport(0, 0, fbo3D_->size_, fbo3D_->size_);
 
+  glClearColor(0.0, 0.0, 0.0, 0.0);
+  //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   glDisable(GL_CULL_FACE);
   glEnable(GL_DEPTH_TEST);
@@ -112,6 +131,7 @@ MyEngine::~MyEngine()
   delete planet_;
   delete quad_;
   delete cube_;
+  delete floor_;
 
   delete fbo3D_;
   delete fbo1_;
@@ -207,7 +227,8 @@ void MyEngine::render()
   glBindTexture(GL_TEXTURE_2D, fbo2_->texid_);
 
 
-  // Render to screen
+  /*
+  // Render to screen with volume renderer
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glViewport(0, 0, w * 2, h * 2);
 
@@ -226,22 +247,30 @@ void MyEngine::render()
       glm::mat4(),
       shader_simplevolume_);
   quad_->render(glm::mat4(), shader_simplevolume_);
+  */
 
-/*
-  // Render to screen
+
+  // Render to screen with global renderer
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glViewport(0, 0, w * 2, h * 2);
 
-  glUseProgram(shader_phong_);
+
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glEnable(GL_DEPTH_TEST);
+  glCullFace(GL_BACK);
   glEnable(GL_CULL_FACE);
 
+  struct timeb tmb;
+  ftime(&tmb);
 
+  glUseProgram(shader_global_);
+  glUniform1f(glGetUniformLocation(shader_global_, "time"), tmb.millitm);
+  glUniform1i(glGetUniformLocation(shader_global_, "textureSize"), fbo3D_->size_);
+  glUniform1i(glGetUniformLocation(shader_global_, "texUnit3D"), 0);
   camera_->render(
       glm::mat4(),
-      shader_phong_);
-  scene_->render(glm::mat4(), shader_phong_);
-*/
+      shader_global_);
+  scene_->render(glm::mat4(), shader_global_);
 }
 
 void MyEngine::mouseScrollCallback(GLFWwindow * window, double dx, double dy)
@@ -260,17 +289,42 @@ void MyEngine::keyCallback(
 
 void MyEngine::updateCameraController()
 {
-    if (glfwGetKey(window_, GLFW_KEY_D) == GLFW_PRESS)
-      roll += 0.02;
-    if (glfwGetKey(window_, GLFW_KEY_A) == GLFW_PRESS)
-      roll -= 0.02;
-    if (glfwGetKey(window_, GLFW_KEY_S) == GLFW_PRESS)
-      pitch += 0.02;
-    if (glfwGetKey(window_, GLFW_KEY_W) == GLFW_PRESS)
-      pitch -= 0.02;
+  glm::vec3 camera_pos_diff;
+  if (glfwGetKey(window_, GLFW_KEY_D) == GLFW_PRESS)
+    camera_pos_diff.x = 0.1;
+  if (glfwGetKey(window_, GLFW_KEY_A) == GLFW_PRESS)
+    camera_pos_diff.x = -0.1;
+  if (glfwGetKey(window_, GLFW_KEY_S) == GLFW_PRESS)
+    camera_pos_diff.z = 0.1;
+  if (glfwGetKey(window_, GLFW_KEY_W) == GLFW_PRESS)
+    camera_pos_diff.z = -0.1;
 
-    //slicer_camera_->transform_matrix_ = glm::translate(glm::mat4(), glm::vec3(-roll,0.0f,-pitch));
-    camera_->transform_matrix_ = glm::translate(glm::mat4(), glm::vec3(-roll,0.0f,-pitch));
+  double xmouse_current, ymouse_current;
+  glfwGetCursorPos(window_, &xmouse_current, &ymouse_current);
+
+  float xmouse_diff = xmouse_current - xmouse;
+  float ymouse_diff = ymouse_current - ymouse;
+
+  xmouse = xmouse_current;
+  ymouse = ymouse_current;
+
+  yaw_goal -= xmouse_diff * 0.1;
+  roll_goal -= ymouse_diff * 0.1;
+
+  Delay(&yaw, yaw_goal, 0.4);
+  Delay(&roll, roll_goal, 0.4);
+
+  glm::mat4 R =
+    glm::rotate(glm::mat4(), yaw, glm::vec3(0,1,0)) *
+    glm::rotate(glm::mat4(), roll, glm::vec3(1,0,0));
+  camera_pos_goal += glm::vec3( R * glm::vec4(camera_pos_diff * 0.6f, 1) );
+
+  Delay(&camera_pos, camera_pos_goal, 0.4);
+
+  glm::mat4 T = glm::translate(camera_pos);
+  
+  camera_->transform_matrix_ = glm::inverse(T * R);
+
 }
 
 Quad::Quad()
@@ -438,4 +492,13 @@ void Planet::buildIcosahedron(
   elements->push_back(9);
   elements->push_back(8);
   elements->push_back(1);
+}
+
+template <class T>
+void MyEngine::Delay(T* input, T end_val, float speed) {
+  if (speed < 0.0f && speed > 1.0f) {
+    speed = glm::clamp(speed, 0.0f, 1.0f);
+    std::cout << "WARNING: clamping speed between 0.0 and 1.0" << std::endl;
+  }
+  *input = (end_val - *input) * speed + *input;
 }

@@ -33,17 +33,18 @@ void main(){
 	vec3 rayOrigin = texture(texUnitFrontCube, texCoord).xyz;
 	vec3 rayEnd = texture(texUnitBackCube, texCoord).xyz;
 	vec3 rayDirection = normalize(rayEnd - rayOrigin);
+	float rayStep = 0.01;
+	int nSteps = int(length(rayEnd - rayOrigin) / rayStep);
 
-	for (int i=0; i<100; i++)
+	for (int i=0; i<nSteps; i++)
 	{
-		int mipLevel = 0;
-		vec3 samplePoint = (rayOrigin + rayDirection * float(i)/50);
+		int mipLevel = 2;
+		vec3 samplePoint = (rayOrigin + rayDirection * rayStep * i);
 		samplePoint = vec3(samplePoint.x, samplePoint.y, samplePoint.z);
-		color.rgb += texelFetch(texUnit3D, ivec3((samplePoint + vec3(1,1,1)) / 2 * textureSize / pow(2,mipLevel)), mipLevel).rgb;
-
+		color += textureLod(texUnit3D, (samplePoint + vec3(1,1,1)) / 2, mipLevel);	
 	}
 	//color.rgb = texture(texUnitFrontCube, texCoord).xyz;
-    color.a = 1;
+    //color.a = 1;
 }
 
 

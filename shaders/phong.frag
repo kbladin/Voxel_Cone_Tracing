@@ -8,7 +8,7 @@ out vec4 color;
 void main(){
 	vertexPosition_viewspace;
 	vec3 n = normalize(normal_viewspace);
-	vec3 l = normalize(-vec3(1,1,1));
+	vec3 l = normalize(-vec3(1,1,0));
 
 	float cosTheta = dot(n,-l);
 	vec3 diffuse = vec3(1,1,1) * max(cosTheta, 0);

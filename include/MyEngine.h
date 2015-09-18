@@ -20,6 +20,7 @@ public:
 	virtual void update();
 	virtual void render();
 	static void mouseScrollCallback(GLFWwindow * window, double dx, double dy);
+	static void cursorPosCallback(GLFWwindow * window, double x, double y);
 	static void keyCallback(
 		GLFWwindow * window,
 		int key,
@@ -27,6 +28,8 @@ public:
 		int action,
 		int mods);
 	void updateCameraController();
+	template <class T>
+	void Delay(T* input, T end_val, float speed);
 private:
 	// FBO
 	// What the hell? If i move these declarations below the others it does not work??!!
@@ -43,8 +46,20 @@ private:
 	Planet* planet_;
 	Quad* quad_;
 	TriangleMesh* cube_;
+	TriangleMesh* floor_;
 
-	float roll, pitch, yaw;
+	float roll_goal;
+	float pitch_goal;
+	float yaw_goal;
+
+	float roll;
+	float pitch;
+	float yaw;
+
+	glm::vec3 camera_pos; 
+	glm::vec3 camera_pos_goal; 
+	float xmouse;
+	float ymouse;
 
 	float delay_counter_;
 	int frame_counter_;
@@ -54,6 +69,7 @@ private:
 	GLuint shader_plaintexture_;
 	GLuint shader_simplevolume_;
 	GLuint shader_worldpositionoutput_;
+	GLuint shader_global_;
 };
 
 class Quad : public Object3D {
