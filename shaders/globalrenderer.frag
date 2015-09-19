@@ -1,5 +1,7 @@
 #version 410 core
 
+#define M_PI 3.14159
+
 in vec3 normal_viewspace;
 in vec3 vertexPosition_viewspace;
 in vec3 vertexPosition_worldspace;
@@ -40,11 +42,48 @@ vec3 coneTrace(vec3 rayDirection)
 	return res.rgb;
 }
 
+// Trace cone from position vertexPosition_worldspace and accumulate color
+vec3 coneTrace2(vec3 rayDirection, float coneAngle, float multiSample)
+{
+	vec4 res = vec4(0,0,0,0);
+	float tanTheta2 = tan(coneAngle / 2);
+	float voxelSize = float(1) / textureSize;
+
+	vec3 rayOrigin = vertexPosition_worldspace + voxelSize * 3 * normalize(normal_worldspace);
+	float sampleStep = voxelSize;
+	float t = voxelSize;
+	for (int i=0; i<100; i++)
+	{
+		float d = (tanTheta2 * t * 2); // Sphere diameter
+		float mipLevel = log2(d / voxelSize);
+		
+		if (mipLevel> 6)
+			break;
+
+		vec3 samplePoint = (rayOrigin + rayDirection * t );
+		vec4 texSample = textureLod(texUnit3D, (samplePoint + vec3(1,1,1)) / 2, mipLevel);
+		
+		// Alpha compositing
+		res.rgb = texSample.a * texSample.rgb + (1 - texSample.a) * res.rgb;
+		res.a = texSample.a + (1 - texSample.a) * res.a;
+
+		if (res.a > 0.99)
+			break;
+
+		res += texSample;
+
+		// Increment sampleStep
+		sampleStep = sampleStep * (1 + tanTheta2) / (1 - tanTheta2);
+		t += sampleStep * multiSample;
+	}
+	return res.rgb;
+}
+
 vec3 calculateLocalDiffuse(vec3 n_viewspace)
 {
 	vec3 res = vec3(0,0,0);
 	vec3 n = n_viewspace;
-	vec3 l = normalize(-vec3(1,1,0));
+	vec3 l = normalize(-vec3(1,1,1));
 
 	float cosTheta = dot(n,-l);
 	vec3 diffuse = vec3(1,1,1) * max(cosTheta, 0);
@@ -59,37 +98,38 @@ vec3 calculateGlobalDiffuse(vec3 n_worldspace)
 	vec3 n = n_worldspace;
    	vec3 rayDirection = n;
    	vec3 res;
-
-   	// First trace a cone in the normal direction
-   	res += coneTrace(rayDirection) / 6;
+   	float coneAngle = M_PI / 6;
 
    	// Pick a random vector helper
-   	vec3 helper = vec3(0,1,0);// vec3(random(normal_worldspace.x),random(normal_worldspace.y),random(normal_worldspace.z));
-   	if (dot(n,helper) == 0)
+   	vec3 helper = normalize(vec3(1,0,0));
+   	if (abs(dot(n,helper)) == 1)
    		// Pick a new helper
-   		helper = vec3(1,0,0);
+   		helper = vec3(0,1,0);
 
    	// Find a tangent and a bitangent
    	vec3 t = normalize(helper - dot(n,helper) * n);
    	vec3 bt = cross(t, n);
-   	// Rotate the normal 30 degrees around the tangent to achieve the first
-   	// sample direction
-   	vec3 sampleDirection = 1/2 * n + sqrt(3)/2 * t;
-   	res += coneTrace(sampleDirection) / 6;
+   	
+   	// First trace a cone in the normal direction
+   	res += coneTrace2(rayDirection, coneAngle, 1) / 6;
+
+   	// Rotate the ray direction 30 degrees around the tangent to achieve the next
+   	// ray direction
+   	rayDirection = 0.5 * n + sqrt(3)/2 * t;
+   	res += coneTrace2(rayDirection, coneAngle, 1) / 6;
 
    	// Next sample direction
-   	sampleDirection = 1/2 * n + sqrt(3)/2 * (1/4 * (sqrt(5) - 1) * t + sqrt(5/8 + sqrt(5)/8) * bt);
-   	res += coneTrace(sampleDirection) / 6;
-
+   	rayDirection = 0.5 * n + sqrt(3)/2 * (1/4 * (sqrt(5) - 1) * t + sqrt(5/8 + sqrt(5)/8) * bt);
+   	res += coneTrace2(rayDirection, coneAngle, 1) / 6;
   	// Next sample direction
-   	sampleDirection = 1/2 * n + sqrt(3)/2 * (1/4 * (sqrt(5) - 1) * t - sqrt(5/8 + sqrt(5)/8) * bt);
-   	res += coneTrace(sampleDirection) / 6;
+   	rayDirection = 0.5 * n + sqrt(3)/2 * (1/4 * (sqrt(5) - 1) * t - sqrt(5/8 + sqrt(5)/8) * bt);
+   	res += coneTrace2(rayDirection, coneAngle, 1) / 6;
 	// Next sample direction
-   	sampleDirection = 1/2 * n - sqrt(3)/2 * (1/4 * (sqrt(5) + 1) * t + sqrt(5/8 - sqrt(5)/8) * bt);
-   	res += coneTrace(sampleDirection) / 6;
+   	rayDirection = 0.5 * n - sqrt(3)/2 * (1/4 * (sqrt(5) + 1) * t + sqrt(5/8 - sqrt(5)/8) * bt);
+   	res += coneTrace2(rayDirection, coneAngle, 1) / 6;
    	// Next sample direction
-   	sampleDirection = 1/2 * n - sqrt(3)/2 * (1/4 * (sqrt(5) + 1) * t - sqrt(5/8 - sqrt(5)/8) * bt);
-   	res += coneTrace(sampleDirection) / 6;
+   	rayDirection = 0.5 * n - sqrt(3)/2 * (1/4 * (sqrt(5) + 1) * t - sqrt(5/8 - sqrt(5)/8) * bt);
+   	res += coneTrace2(rayDirection, coneAngle, 1) / 6;
 
    	return res;
 }
@@ -103,6 +143,6 @@ void main(){
 
 	vec3 v = normalize( vertexPosition_worldspace - eyePosition_worldspace );
 	vec3 r = reflect(v, normalize(normal_worldspace));
-	color.rgb += coneTrace(r);
+	//color.rgb += coneTrace2(r, M_PI / 20, 1);
 
 }
