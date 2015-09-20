@@ -7,6 +7,16 @@ using namespace SGE;
 
 class Planet;
 class Quad;
+class MyObject3D;
+
+struct Material
+{
+	glm::vec3 color_diffuse;
+	glm::vec3 color_specular;
+	float reflectance; // [0, 1]
+	float specular_reflectance; // [0, 1], part of reflectance
+	float specular_polish; // [0, 1]
+};
 
 //! The actual program extending SimpleGraphicsEngine
 /*!
@@ -43,10 +53,18 @@ private:
 	PerspectiveCamera* basic_cam_;
 
 	// Objects
-	Planet* planet_;
+	//Planet* planet_;
 	Quad* quad_;
 	TriangleMesh* cube_;
-	TriangleMesh* floor_;
+	TriangleMesh* floor_mesh_;
+	TriangleMesh* bunny_mesh_;
+
+	MyObject3D* bunny_;
+	MyObject3D* floor_;
+
+	// Materials
+	Material material1_;
+	Material material2_;
 
 	float roll_goal;
 	float pitch_goal;
@@ -70,6 +88,15 @@ private:
 	GLuint shader_simplevolume_;
 	GLuint shader_worldpositionoutput_;
 	GLuint shader_global_;
+};
+
+class MyObject3D : public Object3D {
+public:
+	MyObject3D(Material material);
+	~MyObject3D();
+	void render(glm::mat4 M, GLuint program_ID);
+private:
+	Material material_;
 };
 
 class Quad : public Object3D {

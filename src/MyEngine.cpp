@@ -58,7 +58,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   yaw = pitch = roll = 0;
 
   // FBO
-  fbo3D_ = new FBO3D(128);
+  fbo3D_ = new FBO3D(64);
   fbo1_ = new FBO(640, 480, 0);
   fbo2_ = new FBO(640, 480, 0);
 
@@ -69,16 +69,39 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
 
   camera_->addChild(basic_cam_);
 
+  // Materials
+  material1_.color_diffuse = glm::vec3(0,1,1);
+  material1_.color_specular = glm::vec3(1,1,1);
+  material1_.reflectance = 1;
+  material1_.specular_reflectance = 0;
+  material1_.specular_polish = 0.5;
+
+  material2_.color_diffuse = glm::vec3(1,1,1);
+  material2_.color_specular = glm::vec3(1,1,1);
+  material2_.reflectance = 1;
+  material2_.specular_reflectance = 0.0;
+  material2_.specular_polish = 0.5;
+
   // Objects
-  planet_ = new Planet();
+  //planet_ = new Planet();
   quad_ = new Quad();
   cube_ = new TriangleMesh("../data/meshes/cube.obj");
-  floor_ = new TriangleMesh("../data/meshes/floor.obj");
+  floor_mesh_ = new TriangleMesh("../data/meshes/floor.obj");
+  bunny_mesh_ = new TriangleMesh("../data/meshes/bunny.obj");
+
+  floor_ = new MyObject3D(material1_);
+  bunny_ = new MyObject3D(material2_);
+
+  floor_->addChild(floor_mesh_);
   floor_->transform_matrix_ = glm::rotate(70.0f, glm::vec3(1.0f,0.0f,0.0f));
   floor_->transform_matrix_ = glm::translate(glm::vec3(0.0f,-0.5f,-0.5f)) * floor_->transform_matrix_;
-  scene_->addChild(planet_);
-  scene_->addChild(floor_);
   
+  bunny_->addChild(bunny_mesh_);
+  bunny_->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(0.3,0.3,0.3));
+
+  scene_->addChild(bunny_);
+  scene_->addChild(floor_);
+
   // Set callback functions
   glfwSetScrollCallback(window_, mouseScrollCallback);
   glfwSetKeyCallback(window_, keyCallback);
@@ -118,8 +141,6 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_3D, fbo3D_->texid_);
   glGenerateMipmap(GL_TEXTURE_3D);
-
-
 }
 
 MyEngine::~MyEngine()
@@ -128,10 +149,14 @@ MyEngine::~MyEngine()
   delete basic_cam_;
   delete slicer_camera_;
 
-  delete planet_;
+  //delete planet_;
   delete quad_;
   delete cube_;
+  delete floor_mesh_;
+  delete bunny_mesh_;
+
   delete floor_;
+  delete bunny_;
 
   delete fbo3D_;
   delete fbo1_;
@@ -167,41 +192,6 @@ void MyEngine::render()
 
 
 
-  // Voxelize the mesh
-  glBindFramebuffer(GL_FRAMEBUFFER, fbo3D_->fb_);
-  glViewport(0, 0, fbo3D_->size_, fbo3D_->size_);
-
-  glClearColor(0.0, 0.0, 0.0, 0.0);
-  //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-  glDisable(GL_CULL_FACE);
-  glEnable(GL_DEPTH_TEST);
- 
-  for (int i = 0; i < fbo3D_->size_; ++i)
-  {
-    glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_3D, fbo3D_->texid_, 0, i);    
-    float scene_scale = 1;
-
-    slicer_camera_->render(
-      glm::mat4(),
-      shader_phong_,
-      -scene_scale, // left
-      scene_scale, // right
-      -scene_scale, // bottom
-      scene_scale, // top
-      scene_scale - (float)i / fbo3D_->size_ * scene_scale * 2, // near
-      scene_scale - (float)(i + 1) / fbo3D_->size_ * scene_scale * 2); // far
-
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    scene_->render(glm::mat4(), shader_phong_);
-  }
-
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_3D, fbo3D_->texid_);
-  glGenerateMipmap(GL_TEXTURE_3D);
-
-
-
 
 
 
@@ -211,6 +201,9 @@ void MyEngine::render()
 
   int w, h;
   glfwGetWindowSize(window_, &w, &h);
+
+
+
 
 
   // Render back size of cube
@@ -234,7 +227,7 @@ void MyEngine::render()
   glBindFramebuffer(GL_FRAMEBUFFER, fbo2_->fb_);
   glViewport(0, 0, fbo2_->width_, fbo2_->height_);
 
-  glClearColor(0.0, 0.0, 0.0, 1);
+  glClearColor(0, 0, 0, 1);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   
   glEnable(GL_CULL_FACE);
@@ -302,6 +295,28 @@ void MyEngine::render()
       glm::mat4(),
       shader_global_);
   scene_->render(glm::mat4(), shader_global_);
+
+  
+/*
+  // Render to screen with phong renderer
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glViewport(0, 0, w * 2, h * 2);
+
+
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glEnable(GL_DEPTH_TEST);
+  glCullFace(GL_BACK);
+  glEnable(GL_CULL_FACE);
+
+  struct timeb tmb;
+  ftime(&tmb);
+
+  glUseProgram(shader_phong_);
+  camera_->render(
+      glm::mat4(),
+      shader_phong_);
+  scene_->render(glm::mat4(), shader_phong_);
+  */
 }
 
 void MyEngine::mouseScrollCallback(GLFWwindow * window, double dx, double dy)
@@ -358,6 +373,27 @@ void MyEngine::updateCameraController()
 
 }
 
+MyObject3D::MyObject3D(Material material)
+{
+  material_ = material;
+}
+
+MyObject3D::~MyObject3D()
+{
+
+}
+
+void MyObject3D::render(glm::mat4 M, GLuint program_ID)
+{
+  glUniform3f(glGetUniformLocation(program_ID, "material.color_diffuse"), material_.color_diffuse.x, material_.color_diffuse.y, material_.color_diffuse.z);
+  glUniform3f(glGetUniformLocation(program_ID, "material.color_specular"), material_.color_specular.x, material_.color_specular.y, material_.color_specular.z);
+  glUniform1f(glGetUniformLocation(program_ID, "material.reflectance"), material_.reflectance);
+  glUniform1f(glGetUniformLocation(program_ID, "material.specular_reflectance"), material_.specular_reflectance);
+  glUniform1f(glGetUniformLocation(program_ID, "material.specular_polish"), material_.specular_polish);
+
+  Object3D::render(M, program_ID);
+}
+
 Quad::Quad()
 {
   std::vector<glm::vec3> positions;
@@ -398,7 +434,7 @@ Planet::Planet()
   
   buildIcosahedron(0.7, &positions, &normals, &elements);
 
-  mesh_ = new TriangleMesh("../data/meshes/bunny.obj");
+  //mesh_ = new TriangleMesh("../data/meshes/bunny.obj");
   //mesh_ = new TriangleMesh(positions, normals, elements);
   this->addChild(mesh_);
   this->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(0.3,0.3,0.3));

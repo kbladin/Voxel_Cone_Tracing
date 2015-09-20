@@ -29,7 +29,7 @@ void main(){
 	
 
 
-
+	vec4 res = vec4(0,0,0,0);
 	vec3 rayOrigin = texture(texUnitFrontCube, texCoord).xyz;
 	vec3 rayEnd = texture(texUnitBackCube, texCoord).xyz;
 	vec3 rayDirection = normalize(rayEnd - rayOrigin);
@@ -38,11 +38,23 @@ void main(){
 
 	for (int i=0; i<nSteps; i++)
 	{
-		int mipLevel = 2;
+		int mipLevel = 3;
 		vec3 samplePoint = (rayOrigin + rayDirection * rayStep * i);
 		samplePoint = vec3(samplePoint.x, samplePoint.y, samplePoint.z);
-		color += textureLod(texUnit3D, (samplePoint + vec3(1,1,1)) / 2, mipLevel);	
+		vec4 texSample = textureLod(texUnit3D, (samplePoint + vec3(1,1,1)) / 2, mipLevel);	
+
+		if (texSample.a > 0)
+		{
+			texSample.rgb /= texSample.a;
+			// Alpha compositing
+			res.rgb = res.rgb + (1 - res.a) * texSample.a * texSample.rgb;
+	        res.a   = res.a   + (1 - res.a) * texSample.a;
+		}
+		if (res.a > 0.9)
+			break;
 	}
+	color = res;
+	//color.a = 1;
 	//color.rgb = texture(texUnitFrontCube, texCoord).xyz;
     //color.a = 1;
 }
