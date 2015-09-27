@@ -47,12 +47,21 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
     nullptr,
     nullptr,
     "../shaders/globalrenderer.frag");
+  ShaderManager::instance()->loadShader(
+    "SHADER_VOXELIZATION",
+    "../shaders/voxelization/voxelization.vert", // Vertex shader file path
+    nullptr, // Tesselation control shader file path
+    nullptr, // Tesselation evaluation shader file path
+    "../shaders/voxelization/voxelization.geom", // Geometry shader file path
+    "../shaders/voxelization/voxelization.frag"); // Fragment shader file path
+  
 
   shader_phong_ = ShaderManager::instance()->getShader("SHADER_PHONG");
   shader_plaintexture_ = ShaderManager::instance()->getShader("SHADER_PLAINTEXTURE");
   shader_simplevolume_ = ShaderManager::instance()->getShader("SHADER_SIMPLEVOLUME");
   shader_worldpositionoutput_ = ShaderManager::instance()->getShader("SHADER_WORLDPOSITIONOUTPUT");
   shader_global_ = ShaderManager::instance()->getShader("SHADER_GLOBALRENDERER");
+  shader_voxelization_ = ShaderManager::instance()->getShader("SHADER_VOXELIZATION");
 
   yaw_goal = pitch_goal = roll_goal = 0;
   yaw = pitch = roll = 0;
@@ -158,14 +167,15 @@ void MyEngine::render()
 {
   SimpleGraphicsEngine::render();
   
-  //voxelizeScene();
+  voxelizeScene();
   //renderVolume();
-  renderGlobal();
+  //renderGlobal();
   //renderLocalDiffuse();
 }
 
 void MyEngine::voxelizeScene()
 {
+  /*
   // Voxelize the mesh
   glBindFramebuffer(GL_FRAMEBUFFER, fbo3D_->fb_);
   glViewport(0, 0, fbo3D_->size_, fbo3D_->size_);
@@ -199,6 +209,20 @@ void MyEngine::voxelizeScene()
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_3D, fbo3D_->texid_);
   glGenerateMipmap(GL_TEXTURE_3D);
+  */
+
+  int w, h;
+  glfwGetWindowSize(window_, &w, &h);
+
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glViewport(0, 0, w, h);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+  camera_->render(
+      glm::mat4(),
+      shader_voxelization_);
+    scene_->render(glm::mat4(), shader_voxelization_);
+  
 }
 
 void MyEngine::renderVolume()
@@ -251,7 +275,7 @@ void MyEngine::renderVolume()
 
   // Render to screen with volume renderer
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  glViewport(0, 0, w * 2, h * 2);
+  glViewport(0, 0, w, h);
 
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -304,7 +328,7 @@ void MyEngine::renderLocalDiffuse()
 
   // Render to screen with phong renderer
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  glViewport(0, 0, w * 2, h * 2);
+  glViewport(0, 0, w, h);
 
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

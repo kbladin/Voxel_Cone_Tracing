@@ -94,6 +94,7 @@ private:
 	GLuint shader_simplevolume_;
 	GLuint shader_worldpositionoutput_;
 	GLuint shader_global_;
+	GLuint shader_voxelization_;
 };
 
 class MyObject3D : public Object3D {
