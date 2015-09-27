@@ -41,8 +41,12 @@ public:
 	template <class T>
 	void Delay(T* input, T end_val, float speed);
 private:
+	void voxelizeScene();
+	void renderVolume();
+	void renderGlobal();
+	void renderLocalDiffuse();
+
 	// FBO
-	// What the hell? If i move these declarations below the others it does not work??!!
 	FBO3D* fbo3D_;
 	FBO* fbo1_;
 	FBO* fbo2_;
@@ -61,6 +65,8 @@ private:
 
 	MyObject3D* bunny_;
 	MyObject3D* floor_;
+
+	LightSource* light_;
 
 	// Materials
 	Material material1_;

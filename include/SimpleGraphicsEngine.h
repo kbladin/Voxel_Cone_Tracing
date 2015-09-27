@@ -120,8 +120,9 @@ namespace SGE {
     LightSource();
     virtual void render(glm::mat4 M, GLuint program_ID);
     
-    float intensity_;
-    glm::vec3 color_;
+    float intensity;
+    glm::vec3 color;
+    glm::vec3 position;
   private:
   };
 

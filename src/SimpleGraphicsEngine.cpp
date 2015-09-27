@@ -312,20 +312,22 @@ void OrthoCamera::render(
 
 LightSource::LightSource()
 {
-  intensity_ = 5.0f;
-  color_ = glm::vec3(1.0, 1.0, 1.0);
+  intensity = 300.0f;
+  color = glm::vec3(1.0, 1.0, 1.0);
+  position = glm::vec3(10.0, 10.0, 10.0);
 }
 
 void LightSource::render(glm::mat4 M, GLuint program_ID)
 {
-  //Object3D::render(M * transform_.getMatrix());
+  Object3D::render(M * transform_matrix_, program_ID);
   
-  //glm::vec4 position = M * transform_.getMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+  glm::vec4 total_position = M * transform_matrix_ * glm::vec4(position.x, position.y, position.z, 1.0f);
   
   glUseProgram(program_ID);
-  //glUniform3f(glGetUniformLocation(program_ID_, "lightPosition"),position.x,position.y, position.z);
-  glUniform1f(glGetUniformLocation(program_ID, "lightIntensity"), intensity_);
-  glUniform3f(glGetUniformLocation(program_ID, "lightColor"), color_.r, color_.g, color_.b);
+  
+  glUniform3f(glGetUniformLocation(program_ID, "light.position"),total_position.x,total_position.y, total_position.z);
+  glUniform1f(glGetUniformLocation(program_ID, "light.intensity"), intensity);
+  glUniform3f(glGetUniformLocation(program_ID, "light.color"), color.r, color.g, color.b);
 }
 
 //Object3D* SimpleGraphicsEngine::camera_;
