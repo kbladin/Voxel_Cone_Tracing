@@ -276,7 +276,7 @@ void MyEngine::render()
 
   // Render to screen with global renderer
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  glViewport(0, 0, w * 2, h * 2);
+  glViewport(0, 0, w, h);
 
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -344,6 +344,8 @@ void MyEngine::updateCameraController()
     camera_pos_diff.z = 0.1;
   if (glfwGetKey(window_, GLFW_KEY_W) == GLFW_PRESS)
     camera_pos_diff.z = -0.1;
+  if (glfwGetKey(window_, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+    glfwSetWindowShouldClose(window_  , GL_TRUE);
 
   double xmouse_current, ymouse_current;
   glfwGetCursorPos(window_, &xmouse_current, &ymouse_current);
@@ -354,8 +356,8 @@ void MyEngine::updateCameraController()
   xmouse = xmouse_current;
   ymouse = ymouse_current;
 
-  yaw_goal -= xmouse_diff * 0.1;
-  roll_goal -= ymouse_diff * 0.1;
+  yaw_goal -= xmouse_diff * 0.002;
+  roll_goal -= ymouse_diff * 0.002;
 
   Delay(&yaw, yaw_goal, 0.4);
   Delay(&roll, roll_goal, 0.4);

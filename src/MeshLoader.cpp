@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include <assimp/importer.hpp>
+#include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 

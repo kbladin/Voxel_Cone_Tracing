@@ -4,7 +4,8 @@
 #include <vector>
 #include <string>
 
-#include <gl/glfw3.h>
+#include <GL/glew.h>
+//#include <GLFW/glfw3.h>
 
 //! Load and compile a shader program.
 /*!

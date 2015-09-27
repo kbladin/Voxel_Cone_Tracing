@@ -2,12 +2,14 @@
 #define SIMPLE_GRAPHICS_ENGINE_H
 
 #include <vector>
+#include <string>
 #include <map>
 
+#define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <gl/glew.h>
-#include <gl/glfw3.h>
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
 
 namespace SGE {
   //! ShaderManager

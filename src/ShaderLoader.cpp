@@ -1,6 +1,10 @@
 #include "../include/ShaderLoader.h"
 #include <fstream>
 
+#include <GL/glew.h>
+//#include <GLFW/glfw3.h>
+
+
 // https://www.omniref.com/ruby/gems/opengl-bindings/1.3.5/symbols/OpenGL::GL_TESS_CONTROL_SHADER
 
 #ifndef GL_TESS_CONTROL_SHADER

@@ -3,12 +3,12 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
-#include <random>
 
+#define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <gl/glew.h>
-#include <gl/glfw3.h>
+#include <GL/glew.h>
+//#include <GLFW/glfw3.h>
 
 #include "../include/ShaderLoader.h"
 #include "../include/MeshLoader.h"
@@ -71,10 +71,12 @@ void Object3D::addChild(Object3D *child)
 
 void Object3D::removeChild(Object3D *child)
 {
+  /*
   children.erase(std::remove(children.begin(), children.end(), child), children.end());
   for (int i=0; i<children.size(); i++) {
     children[i]->removeChild(child);
   }
+  */
 }
 
 void Object3D::render(glm::mat4 M, GLuint program_ID)
@@ -357,11 +359,11 @@ bool SimpleGraphicsEngine::initialize()
     return -1;
   // Modern OpenGL
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   // Create a windowed mode window and its OpenGL context
-  window_ = glfwCreateWindow(720, 480, "Model Viewer", NULL, NULL);
+  window_ = glfwCreateWindow(720 * 2, 480 * 2, "", NULL, NULL);
   if (!window_)
   {
     glfwTerminate();
@@ -369,14 +371,13 @@ bool SimpleGraphicsEngine::initialize()
   }
   // Make the window's context current
   glfwMakeContextCurrent(window_);
-  printf("%s\n", glGetString(GL_VERSION));
+  printf("OpenGL version: %s\n", glGetString(GL_VERSION));
   
   glewExperimental=true; // Needed in core profile
   if (glewInit() != GLEW_OK) {
     fprintf(stderr, "Failed to initialize GLEW\n");
     return false;
   }
-  
   // Enable depth test
   glEnable(GL_DEPTH_TEST);
   // Accept fragment if it closer to the camera than the former one
