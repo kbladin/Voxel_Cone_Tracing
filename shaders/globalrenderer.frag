@@ -11,6 +11,13 @@ struct Material
 	float specular_polish; // [0, 1]
 };
 
+struct LightSource
+{
+	float intensity;
+	vec3 color;
+	vec3 position;
+};
+
 in vec3 normal_viewspace;
 in vec3 vertexPosition_viewspace;
 in vec3 vertexPosition_worldspace;
@@ -21,6 +28,8 @@ uniform float time;
 uniform int textureSize;
 uniform sampler3D texUnit3D;
 uniform Material material;
+uniform LightSource light;
+
 
 out vec4 color;
 
@@ -73,18 +82,21 @@ vec3 coneTrace(vec3 rayDirection, float coneAngle, float multiSample)
 	return res.rgb;
 }
 
-vec3 calculateLocalDiffuse(vec3 n_viewspace)
+vec3 calculateLocalDiffuse()
 {
-	vec3 res = vec3(0,0,0);
-	vec3 n = n_viewspace;
-	vec3 l = normalize(-vec3(1,1,1));
+	vec3 n = normalize(normal_worldspace);
+	vec3 light_diff = vertexPosition_worldspace - light.position;
+	float light_dist = length(light_diff);
+	vec3 l = normalize(light_diff);
+
 
 	float cosTheta = dot(n,-l);
-	vec3 diffuse = vec3(1,1,1) * max(cosTheta, 0);
+	vec3 diffuse =
+		light.color * light.intensity *
+		max(cosTheta, 0) *
+		1 / pow(light_dist, 2);
 
-	vec3 ambient = vec3(0.0,0.0,0.0);
-	res = ambient + diffuse;
-	return res;
+	return diffuse;
 }
 
 vec3 calculateGlobalDiffuse(vec3 n_worldspace)
@@ -128,15 +140,46 @@ vec3 calculateGlobalDiffuse(vec3 n_worldspace)
    	return res;
 }
 
-void main(){
-	// Local light contribution
-    //color.rgb = calculateLocalDiffuse(normalize(normal_viewspace));
-	color.a = 1;
-	color.rgb = calculateLocalDiffuse(normalize(normal_worldspace)) * material.color_diffuse * material.reflectance * (1 - material.specular_reflectance);
-	color.rgb += calculateGlobalDiffuse(normalize(normal_worldspace)) * material.color_diffuse * material.reflectance * (1 - material.specular_reflectance);
+vec3 calculateLocalSpecular()
+{
+	vec3 n = normalize(normal_viewspace);
+	vec3 v = normalize( vertexPosition_viewspace - vec3(0,0,0) );
+	vec3 r = reflect(v, n);
 
+	vec3 light_diff = vertexPosition_worldspace - light.position;
+	float light_dist = length(light_diff);
+	vec3 l = normalize(light_diff);
+
+	float cos_alpha = dot(r,-l);
+
+
+	vec3 spcular =
+	light.color * light.intensity *
+	pow(max(cos_alpha, 0), (material.specular_polish + 0.1) * 50) *
+	1 / pow(light_dist, 2);
+
+	return spcular;
+}
+
+vec3 calculateGlobalSpecular()
+{
 	vec3 v = normalize( vertexPosition_worldspace - eyePosition_worldspace );
 	vec3 r = reflect(v, normalize(normal_worldspace));
-	//color.rgb += coneTrace(r, M_PI / 50, 1);
+	float cone_angle = (1 - material.specular_polish) * M_PI / 2;
+	return coneTrace(r, cone_angle, 1);
+}
 
+void main(){
+	// Local light contribution
+	color.a = 1;
+	if (material.reflectance != 0 && (1 - material.specular_reflectance) != 0)
+	{
+		color.rgb = calculateLocalDiffuse() * material.color_diffuse * material.reflectance * (1 - material.specular_reflectance);
+		color.rgb += calculateGlobalDiffuse(normalize(normal_worldspace)) * material.color_diffuse * material.reflectance * (1 - material.specular_reflectance);		
+	}
+	if (material.reflectance != 0 && material.specular_reflectance != 0)
+	{
+		color.rgb += calculateGlobalSpecular() * material.color_specular * material.reflectance * material.specular_reflectance;
+		color.rgb += calculateLocalSpecular() * material.color_specular * material.reflectance * material.specular_reflectance;
+	}
 }

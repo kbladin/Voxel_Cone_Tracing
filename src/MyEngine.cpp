@@ -70,30 +70,33 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   camera_->addChild(basic_cam_);
 
   // Materials
-  material1_.color_diffuse = glm::vec3(0,1,1);
+  material1_.color_diffuse = glm::vec3(0.5,1,1);
   material1_.color_specular = glm::vec3(1,1,1);
   material1_.reflectance = 1;
   material1_.specular_reflectance = 0;
-  material1_.specular_polish = 0.5;
+  material1_.specular_polish = 0.9;
 
   material2_.color_diffuse = glm::vec3(1,1,1);
   material2_.color_specular = glm::vec3(1,1,1);
   material2_.reflectance = 1;
-  material2_.specular_reflectance = 0.0;
-  material2_.specular_polish = 0.5;
+  material2_.specular_reflectance = 0;
+  material2_.specular_polish = 0.95;
 
   // Objects
   //planet_ = new Planet();
   quad_ = new Quad();
   cube_ = new TriangleMesh("../data/meshes/cube.obj");
-  floor_mesh_ = new TriangleMesh("../data/meshes/floor.obj");
+  floor_mesh_ = new TriangleMesh("../data/meshes/cube.obj");
   bunny_mesh_ = new TriangleMesh("../data/meshes/bunny.obj");
 
   floor_ = new MyObject3D(material1_);
   bunny_ = new MyObject3D(material2_);
 
+  light_ = new LightSource();
+
   floor_->addChild(floor_mesh_);
-  floor_->transform_matrix_ = glm::rotate(70.0f, glm::vec3(1.0f,0.0f,0.0f));
+  floor_->transform_matrix_ = glm::scale(glm::vec3(1.0f,0.2f,1.0f));
+  floor_->transform_matrix_ = glm::rotate(70.0f, glm::vec3(1.0f,0.0f,0.0f)) * floor_->transform_matrix_;
   floor_->transform_matrix_ = glm::translate(glm::vec3(0.0f,-0.5f,-0.5f)) * floor_->transform_matrix_;
   
   bunny_->addChild(bunny_mesh_);
@@ -101,46 +104,14 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
 
   scene_->addChild(bunny_);
   scene_->addChild(floor_);
+  scene_->addChild(light_);
 
   // Set callback functions
   glfwSetScrollCallback(window_, mouseScrollCallback);
   glfwSetKeyCallback(window_, keyCallback);
   glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-
-
-  // Voxelize the mesh
-  glBindFramebuffer(GL_FRAMEBUFFER, fbo3D_->fb_);
-  glViewport(0, 0, fbo3D_->size_, fbo3D_->size_);
-
-  glClearColor(0.0, 0.0, 0.0, 0.0);
-  //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-  glDisable(GL_CULL_FACE);
-  glEnable(GL_DEPTH_TEST);
- 
-  for (int i = 0; i < fbo3D_->size_; ++i)
-  {
-    glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_3D, fbo3D_->texid_, 0, i);    
-    float scene_scale = 1;
-
-    slicer_camera_->render(
-      glm::mat4(),
-      shader_phong_,
-      -scene_scale, // left
-      scene_scale, // right
-      -scene_scale, // bottom
-      scene_scale, // top
-      scene_scale - (float)i / fbo3D_->size_ * scene_scale * 2, // near
-      scene_scale - (float)(i + 1) / fbo3D_->size_ * scene_scale * 2); // far
-
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    scene_->render(glm::mat4(), shader_phong_);
-  }
-
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_3D, fbo3D_->texid_);
-  glGenerateMipmap(GL_TEXTURE_3D);
+  voxelizeScene();
 }
 
 MyEngine::~MyEngine()
@@ -157,6 +128,8 @@ MyEngine::~MyEngine()
 
   delete floor_;
   delete bunny_;
+
+  delete light_;
 
   delete fbo3D_;
   delete fbo1_;
@@ -185,27 +158,51 @@ void MyEngine::render()
 {
   SimpleGraphicsEngine::render();
   
+  //voxelizeScene();
+  //renderVolume();
+  renderGlobal();
+  //renderLocalDiffuse();
+}
 
+void MyEngine::voxelizeScene()
+{
+  // Voxelize the mesh
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo3D_->fb_);
+  glViewport(0, 0, fbo3D_->size_, fbo3D_->size_);
 
+  glClearColor(0.0, 0.0, 0.0, 0.0);
+  //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+  glDisable(GL_CULL_FACE);
+  glEnable(GL_DEPTH_TEST);
+ 
+  // Along z direction
+  for (int i = 0; i < fbo3D_->size_; ++i)
+  {
+    glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_3D, fbo3D_->texid_, 0, i);    
+    float scene_scale = 1;
 
+    slicer_camera_->render(
+      glm::mat4(),
+      shader_phong_,
+      -scene_scale, // left
+      scene_scale, // right
+      -scene_scale, // bottom
+      scene_scale, // top
+      scene_scale - (float)i / fbo3D_->size_ * scene_scale * 2, // near
+      scene_scale - (float)(i + 1) / fbo3D_->size_ * scene_scale * 2); // far
 
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    scene_->render(glm::mat4(), shader_phong_);
+  }
 
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_3D, fbo3D_->texid_);
+  glGenerateMipmap(GL_TEXTURE_3D);
+}
 
-
-
-
-
-
-
-
-  int w, h;
-  glfwGetWindowSize(window_, &w, &h);
-
-
-
-
-
+void MyEngine::renderVolume()
+{
   // Render back size of cube
   glBindFramebuffer(GL_FRAMEBUFFER, fbo1_->fb_);
   glViewport(0, 0, fbo1_->width_, fbo1_->height_);
@@ -239,6 +236,8 @@ void MyEngine::render()
       shader_worldpositionoutput_);
   cube_->render(glm::mat4(), shader_worldpositionoutput_);
 
+  int w, h;
+  glfwGetWindowSize(window_, &w, &h);
 
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_3D, fbo3D_->texid_);
@@ -250,8 +249,6 @@ void MyEngine::render()
   glActiveTexture(GL_TEXTURE2);
   glBindTexture(GL_TEXTURE_2D, fbo2_->texid_);
 
-
-  /*
   // Render to screen with volume renderer
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glViewport(0, 0, w * 2, h * 2);
@@ -271,13 +268,16 @@ void MyEngine::render()
       glm::mat4(),
       shader_simplevolume_);
   quad_->render(glm::mat4(), shader_simplevolume_);
-  */
+}
 
+void MyEngine::renderGlobal()
+{
+  int w, h;
+  glfwGetWindowSize(window_, &w, &h);
 
   // Render to screen with global renderer
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glViewport(0, 0, w, h);
-
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glEnable(GL_DEPTH_TEST);
@@ -295,9 +295,13 @@ void MyEngine::render()
       glm::mat4(),
       shader_global_);
   scene_->render(glm::mat4(), shader_global_);
+}
 
-  
-/*
+void MyEngine::renderLocalDiffuse()
+{
+  int w, h;
+  glfwGetWindowSize(window_, &w, &h);
+
   // Render to screen with phong renderer
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glViewport(0, 0, w * 2, h * 2);
@@ -316,7 +320,6 @@ void MyEngine::render()
       glm::mat4(),
       shader_phong_);
   scene_->render(glm::mat4(), shader_phong_);
-  */
 }
 
 void MyEngine::mouseScrollCallback(GLFWwindow * window, double dx, double dy)
