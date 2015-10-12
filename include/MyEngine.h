@@ -49,9 +49,7 @@ private:
 	void init3DTexture();
 
 	GLuint tex3D;
-	int tex_size = 64;
-	GLuint shader_rendertexture;
-	GLuint shader_display;
+	int tex_size = 128;
 
 
 	// FBO

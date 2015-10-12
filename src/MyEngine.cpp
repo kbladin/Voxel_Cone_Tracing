@@ -55,17 +55,6 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
     "../shaders/voxelization/voxelization.geom", // Geometry shader file path
     "../shaders/voxelization/voxelization.frag"); // Fragment shader file path
   
-
-
-  ShaderManager::instance()->loadShader(
-    "SHADER_RENDERTEXTURE",
-    "../shaders/image_store_test/rendertexture.vert",
-    nullptr, 
-    nullptr,
-    nullptr,
-    "../shaders/image_store_test/rendertexture.frag");
-  shader_rendertexture = ShaderManager::instance()->getShader("SHADER_RENDERTEXTURE");
-
   shader_phong_ = ShaderManager::instance()->getShader("SHADER_PHONG");
   shader_plaintexture_ = ShaderManager::instance()->getShader("SHADER_PLAINTEXTURE");
   shader_simplevolume_ = ShaderManager::instance()->getShader("SHADER_SIMPLEVOLUME");
@@ -194,7 +183,7 @@ void MyEngine::init3DTexture()
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 
-  glTexStorage3D(GL_TEXTURE_3D, log2(tex_size), GL_RGBA8, tex_size, tex_size, tex_size);
+  glTexStorage3D(GL_TEXTURE_3D, 10, GL_RGBA8, tex_size, tex_size, tex_size);
   glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA8, tex_size, tex_size, tex_size, 0, GL_RGBA, GL_FLOAT, &data[0]);
 
   glGenerateMipmap(GL_TEXTURE_3D);
