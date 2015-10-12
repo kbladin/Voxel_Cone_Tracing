@@ -32,6 +32,8 @@ in vec3 vertexPosition_worldspace;
 out vec4 color;
 
 void main() {
-    imageStore(voxelImage, ivec3(32, 32+0, 32), vec4(0.0f, 1.0f, 1.0f, 1.0f));
+    ivec3 size = imageSize(voxelImage);
+	ivec3 texCoord = ivec3((vertexPosition_worldspace + vec3(1)) / 2 * size);
+    imageStore(voxelImage, texCoord, vec4(0.0f, 1.0f, 1.0f, 1.0f));
     color = vec4(1,1,1,1);
 }

@@ -84,7 +84,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   // Cameras
   camera_ = new Object3D();
   basic_cam_ = new PerspectiveCamera(window_);
-  slicer_camera_ = new OrthoCamera();
+  voxelizer_camera_ = new OrthoCamera();
 
   camera_->addChild(basic_cam_);
 
@@ -138,8 +138,7 @@ MyEngine::~MyEngine()
 {
   delete camera_;
   delete basic_cam_;
-  delete slicer_camera_;
-
+  delete voxelizer_camera_;
   //delete planet_;
   delete quad_;
   delete cube_;
@@ -203,7 +202,7 @@ void MyEngine::render()
   SimpleGraphicsEngine::render();
   
   voxelizeScene();
-  //renderVolume();
+  renderVolume();
   //renderGlobal();
   //renderLocalDiffuse();
 }
@@ -222,9 +221,9 @@ void MyEngine::voxelizeScene()
   glBindImageTexture(0, tex3D, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
   glUseProgram(shader_voxelization_);
   glUniform1i(glGetUniformLocation(shader_voxelization_, "voxelImage"), 0);
-  camera_->render(
+  voxelizer_camera_->render(
       glm::mat4(),
-      shader_voxelization_);
+      shader_voxelization_, -1, 1, -1, 1, 1, -1);
   scene_->render(glm::mat4(), shader_voxelization_);
 
   glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);

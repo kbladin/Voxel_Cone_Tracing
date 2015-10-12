@@ -22,44 +22,44 @@ void main() {
 
 	if (proj_x > proj_y && proj_x > proj_z)
 	{ // x axis is dominant, project on x plane
-		vertexPosition_worldspace = vertexPositions[0];
-	    gl_Position = vec4(0, gl_in[0].gl_Position.y, gl_in[0].gl_Position.z, gl_in[0].gl_Position.w);
+		vertexPosition_worldspace = gl_in[0].gl_Position.xyz;//vertexPositions[0];
+	    gl_Position = vec4(gl_in[0].gl_Position.y, gl_in[0].gl_Position.z, 0, 1);
 	    EmitVertex();
 
-		vertexPosition_worldspace = vertexPositions[1];
-	    gl_Position = vec4(0, gl_in[1].gl_Position.y, gl_in[1].gl_Position.z, gl_in[1].gl_Position.w);
+		vertexPosition_worldspace = gl_in[1].gl_Position.xyz;//vertexPositions[1];
+	    gl_Position = vec4(gl_in[1].gl_Position.y, gl_in[1].gl_Position.z, 0, 1);
 	    EmitVertex();
 
-		vertexPosition_worldspace = vertexPositions[2];
-	    gl_Position = vec4(0, gl_in[2].gl_Position.y, gl_in[2].gl_Position.z, gl_in[2].gl_Position.w);
+		vertexPosition_worldspace = gl_in[2].gl_Position.xyz;//vertexPositions[2];
+	    gl_Position = vec4(gl_in[2].gl_Position.y, gl_in[2].gl_Position.z, 0, 1);
 	    EmitVertex();
 	}
 	else if (proj_y > proj_x && proj_y > proj_z)
 	{ // y axis is dominant, project on y plane
-		vertexPosition_worldspace = vertexPositions[0];
-	    gl_Position = vec4(gl_in[0].gl_Position.x, 0, gl_in[0].gl_Position.z, gl_in[0].gl_Position.w);
+		vertexPosition_worldspace = gl_in[0].gl_Position.xyz;//vertexPositions[0];
+	    gl_Position = vec4(gl_in[0].gl_Position.x, gl_in[0].gl_Position.z, 0, 1);
 	    EmitVertex();
 
-		vertexPosition_worldspace = vertexPositions[1];
-	    gl_Position = vec4(gl_in[1].gl_Position.x, 0, gl_in[1].gl_Position.z, gl_in[1].gl_Position.w);
+		vertexPosition_worldspace = gl_in[1].gl_Position.xyz;//vertexPositions[1];
+	    gl_Position = vec4(gl_in[1].gl_Position.x, gl_in[1].gl_Position.z, 0, 1);
 	    EmitVertex();
 
-		vertexPosition_worldspace = vertexPositions[2];
-	    gl_Position = vec4(gl_in[2].gl_Position.x, 0, gl_in[2].gl_Position.z, gl_in[2].gl_Position.w);
+		vertexPosition_worldspace = gl_in[2].gl_Position.xyz;//vertexPositions[2];
+	    gl_Position = vec4(gl_in[2].gl_Position.x, gl_in[2].gl_Position.z, 0, 1);
 	    EmitVertex();
 	}
 	else
 	{ // z axis is dominant, project on z plane
-		vertexPosition_worldspace = vertexPositions[0];
-	    gl_Position = vec4(gl_in[0].gl_Position.x, gl_in[0].gl_Position.x, 0, gl_in[0].gl_Position.w);
+		vertexPosition_worldspace = gl_in[0].gl_Position.xyz;//vertexPositions[0];
+	    gl_Position = vec4(gl_in[0].gl_Position.x, gl_in[0].gl_Position.y, 0, 1);
 	    EmitVertex();
 
-		vertexPosition_worldspace = vertexPositions[1];
-	    gl_Position = vec4(gl_in[1].gl_Position.x, gl_in[0].gl_Position.x, 0, gl_in[1].gl_Position.w);
+		vertexPosition_worldspace = gl_in[1].gl_Position.xyz;//vertexPositions[1];
+	    gl_Position = vec4(gl_in[1].gl_Position.x, gl_in[1].gl_Position.y, 0, 1);
 	    EmitVertex();
 
-		vertexPosition_worldspace = vertexPositions[2];
-	    gl_Position = vec4(gl_in[2].gl_Position.x, gl_in[0].gl_Position.x, 0, gl_in[2].gl_Position.w);
+		vertexPosition_worldspace = gl_in[2].gl_Position.xyz;//vertexPositions[2];
+	    gl_Position = vec4(gl_in[2].gl_Position.x, gl_in[2].gl_Position.y, 0, 1);
 	    EmitVertex();
 		
 	}

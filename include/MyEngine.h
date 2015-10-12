@@ -60,7 +60,7 @@ private:
 
 	// Cameras
 	static Object3D* camera_;
-	OrthoCamera* slicer_camera_;
+	OrthoCamera* voxelizer_camera_;
 	PerspectiveCamera* basic_cam_;
 
 	// Objects
