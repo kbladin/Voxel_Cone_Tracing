@@ -63,5 +63,20 @@ void main() {
 	    EmitVertex();
 		
 	}
+
+/*
+	vertexPosition_worldspace = vertexPositions[0];
+    gl_Position = gl_in[0].gl_Position;//vec4(0, gl_in[0].gl_Position.y, gl_in[0].gl_Position.z, gl_in[0].gl_Position.w);
+    EmitVertex();
+
+	vertexPosition_worldspace = vertexPositions[1];
+    gl_Position = gl_in[1].gl_Position;//vec4(0, gl_in[1].gl_Position.y, gl_in[1].gl_Position.z, gl_in[1].gl_Position.w);
+    EmitVertex();
+
+	vertexPosition_worldspace = vertexPositions[2];
+    gl_Position = gl_in[2].gl_Position;//vec4(0, gl_in[2].gl_Position.y, gl_in[2].gl_Position.z, gl_in[2].gl_Position.w);
+    EmitVertex();
+*/
+
     EndPrimitive();
 }

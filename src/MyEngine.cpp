@@ -64,17 +64,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
     nullptr,
     nullptr,
     "../shaders/image_store_test/rendertexture.frag");
-  ShaderManager::instance()->loadShader(
-    "SHADER_DISPLAY",
-    "../shaders/image_store_test/display.vert",
-    nullptr, 
-    nullptr,
-    nullptr,
-    "../shaders/image_store_test/display.frag");
   shader_rendertexture = ShaderManager::instance()->getShader("SHADER_RENDERTEXTURE");
-  shader_display = ShaderManager::instance()->getShader("SHADER_DISPLAY");
-
-
 
   shader_phong_ = ShaderManager::instance()->getShader("SHADER_PHONG");
   shader_plaintexture_ = ShaderManager::instance()->getShader("SHADER_PLAINTEXTURE");
@@ -88,7 +78,6 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
 
 
   // FBO
-  fbo3D_ = new FBO3D(64);
   fbo1_ = new FBO(640, 480, 0);
   fbo2_ = new FBO(640, 480, 0);
 
@@ -162,7 +151,6 @@ MyEngine::~MyEngine()
 
   delete light_;
 
-  delete fbo3D_;
   delete fbo1_;
   delete fbo2_;
 }
@@ -187,28 +175,6 @@ void MyEngine::update()
 
 void MyEngine::init3DTexture()
 {
-/*
-  std::vector<float> data;
-  data.resize(4 * WIDTH * HEIGHT);
-  for (int i = 0; i < 4 * WIDTH * HEIGHT; ++i)
-  {
-    data[i] = 0.0f;
-  }
-
-  glGenTextures(1, &tex);
-  glBindTexture(GL_TEXTURE_2D, tex);
-
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-  //glTexStorage2D(GL_TEXTURE_2D, 10, GL_RGBA32F, WIDTH, HEIGHT);
-
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, WIDTH, HEIGHT, 0, GL_RGBA, GL_FLOAT, &data[0]);
-*/
-
   std::vector<float> data;
   data.resize(4 * tex_size*tex_size*tex_size);
   for (int i = 0; i < 4 * tex_size*tex_size*tex_size; ++i)
@@ -228,248 +194,38 @@ void MyEngine::init3DTexture()
 
   //glTexStorage2D(GL_TEXTURE_2D, 10, GL_RGBA32F, WIDTH, HEIGHT);
 
-  glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, tex_size, tex_size, tex_size, 0, GL_RGBA, GL_FLOAT, &data[0]);
+  glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA8, tex_size, tex_size, tex_size, 0, GL_RGBA, GL_FLOAT, &data[0]);
 
-}
-
-void MyEngine::imageStoreTestRender()
-{
-  /*
-  glBindImageTexture(0, tex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
-  glUseProgram(shader_rendertexture);
-  glUniform1i(glGetUniformLocation(shader_rendertexture, "image"), 0);
-  camera_->render(
-      glm::mat4(),
-      shader_rendertexture);
-  quad_->render(glm::mat4(), shader_rendertexture);
-
-  glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
-
-
-
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  glViewport(0, 0, 800, 600);
-
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  glDisable(GL_DEPTH_TEST);
-  glDisable(GL_CULL_FACE);
-
-  glUniform1i(glGetUniformLocation(shader_display, "texUnit"), 0);
-  camera_->render(
-      glm::mat4(),
-      shader_display);
-  quad_->render(glm::mat4(), shader_display);
-*/
-
-
-
-
-
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-  glClearColor(0.0, 0.0, 0.0, 1);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  glDisable(GL_CULL_FACE);
-  glDisable(GL_DEPTH_TEST);
-
-  glBindImageTexture(0, tex3D, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-  glUseProgram(shader_rendertexture);
-  glUniform1i(glGetUniformLocation(shader_rendertexture, "image"), 0);
-  camera_->render(
-      glm::mat4(),
-      shader_rendertexture);
-  quad_->render(glm::mat4(), shader_rendertexture);
-
-  glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
-
-
-
-
-
-/*
-    // Render back side of cube
-  glBindFramebuffer(GL_FRAMEBUFFER, fbo1_->fb_);
-  glViewport(0, 0, fbo1_->width_, fbo1_->height_);
-
-  glClearColor(0.0, 0.0, 0.0, 1);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  
-  glEnable(GL_CULL_FACE);
-  glCullFace(GL_FRONT);
-  glEnable(GL_DEPTH_TEST);
-
-  camera_->render(
-      glm::mat4(),
-      shader_worldpositionoutput_);
-  cube_->render(glm::mat4(), shader_worldpositionoutput_);
-
-
-  // Render front size of cube
-  glBindFramebuffer(GL_FRAMEBUFFER, fbo2_->fb_);
-  glViewport(0, 0, fbo2_->width_, fbo2_->height_);
-
-  glClearColor(0, 0, 0, 1);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  
-  glEnable(GL_CULL_FACE);
-  glCullFace(GL_BACK);
-  glEnable(GL_DEPTH_TEST);
-
-  camera_->render(
-      glm::mat4(),
-      shader_worldpositionoutput_);
-  cube_->render(glm::mat4(), shader_worldpositionoutput_);
-
-  int w, h;
-  glfwGetWindowSize(window_, &w, &h);
-
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_3D, tex);
-
-  glActiveTexture(GL_TEXTURE1);
-  glBindTexture(GL_TEXTURE_2D, fbo1_->texid_);
-
-
-  glActiveTexture(GL_TEXTURE2);
-  glBindTexture(GL_TEXTURE_2D, fbo2_->texid_);
-
-  // Render to screen with volume renderer
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  glViewport(0, 0, w, h);
-
-
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  glDisable(GL_DEPTH_TEST);
-  glDisable(GL_CULL_FACE);
-
-
-  glUseProgram(shader_simplevolume_);
-  glUniform1i(glGetUniformLocation(shader_simplevolume_, "textureSize"), 64);
-  glUniform1i(glGetUniformLocation(shader_simplevolume_, "texUnit3D"), 0);
-  glUniform1i(glGetUniformLocation(shader_simplevolume_, "texUnitBackCube"), 1);
-  glUniform1i(glGetUniformLocation(shader_simplevolume_, "texUnitFrontCube"), 2);
-
-  camera_->render(
-      glm::mat4(),
-      shader_simplevolume_);
-  quad_->render(glm::mat4(), shader_simplevolume_);
-  */
 }
 
 void MyEngine::render()
 {
   SimpleGraphicsEngine::render();
   
-  //imageStoreTestRender();
-
   voxelizeScene();
-  renderVolume();
+  //renderVolume();
   //renderGlobal();
   //renderLocalDiffuse();
 }
 
 void MyEngine::voxelizeScene()
 {
-  /*
-  // Voxelize the mesh
-  glBindFramebuffer(GL_FRAMEBUFFER, fbo3D_->fb_);
-  glViewport(0, 0, fbo3D_->size_, fbo3D_->size_);
-
-  glClearColor(0.0, 0.0, 0.0, 0.0);
-  //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-  glDisable(GL_CULL_FACE);
-  glEnable(GL_DEPTH_TEST);
- 
-  // Along z direction
-  for (int i = 0; i < fbo3D_->size_; ++i)
-  {
-    glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_3D, fbo3D_->texid_, 0, i);    
-    float scene_scale = 1;
-
-    slicer_camera_->render(
-      glm::mat4(),
-      shader_phong_,
-      -scene_scale, // left
-      scene_scale, // right
-      -scene_scale, // bottom
-      scene_scale, // top
-      scene_scale - (float)i / fbo3D_->size_ * scene_scale * 2, // near
-      scene_scale - (float)(i + 1) / fbo3D_->size_ * scene_scale * 2); // far
-
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    scene_->render(glm::mat4(), shader_phong_);
-  }
-
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_3D, fbo3D_->texid_);
-  glGenerateMipmap(GL_TEXTURE_3D);
-  */
-
-  //int w, h;
-  //glfwGetWindowSize(window_, &w, &h);
-
-
-
-
-/*
-  //glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_3D, fbo3D_->texid_);
-  glBindImageTexture(0, fbo3D_->texid_, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-
-  glDisable(GL_DEPTH_TEST);
-  glDisable(GL_CULL_FACE);
-  //glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  glViewport(0, 0, fbo3D_->size_, fbo3D_->size_);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-
-  glUseProgram(shader_voxelization_);
-  glUniform1i(glGetUniformLocation(shader_voxelization_, "voxelImage"), 0);
-
-
-  camera_->render(
-      glm::mat4(),
-      shader_voxelization_);
-    scene_->render(glm::mat4(), shader_voxelization_);
-    
-  //glActiveTexture(GL_TEXTURE0);
-  //glBindTexture(GL_TEXTURE_3D, fbo3D_->texid_);
-  //glGenerateMipmap(GL_TEXTURE_3D);
-
-  //glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
-*/
-
-
-/*
-  glBindTexture(GL_TEXTURE_3D, fbo3D_->texid_);
-  glActiveTexture(GL_TEXTURE0);
-  glBindImageTexture(0, fbo3D_->texid_, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-  glUseProgram(shader_voxelization_);
-  glUniform1i(glGetUniformLocation(shader_voxelization_, "voxelImage"), 0);
-  camera_->render(
-      glm::mat4(),
-      shader_voxelization_);
-  quad_->render(glm::mat4(), shader_voxelization_);
-
-  glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
-*/
-
+  glViewport(0, 0, tex_size, tex_size);
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
   glClearColor(0.0, 0.0, 0.0, 1);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glDisable(GL_CULL_FACE);
   glDisable(GL_DEPTH_TEST);
+  //glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
-  glBindImageTexture(0, tex3D, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-  glUseProgram(shader_rendertexture);
-  glUniform1i(glGetUniformLocation(shader_rendertexture, "image"), 0);
+  glBindImageTexture(0, tex3D, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+  glUseProgram(shader_voxelization_);
+  glUniform1i(glGetUniformLocation(shader_voxelization_, "voxelImage"), 0);
   camera_->render(
       glm::mat4(),
-      shader_rendertexture);
-  quad_->render(glm::mat4(), shader_rendertexture);
+      shader_voxelization_);
+  scene_->render(glm::mat4(), shader_voxelization_);
 
   glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
 
@@ -547,6 +303,7 @@ void MyEngine::renderVolume()
 
 void MyEngine::renderGlobal()
 {
+  /*
   int w, h;
   glfwGetWindowSize(window_, &w, &h);
 
@@ -570,6 +327,7 @@ void MyEngine::renderGlobal()
       glm::mat4(),
       shader_global_);
   scene_->render(glm::mat4(), shader_global_);
+  */
 }
 
 void MyEngine::renderLocalDiffuse()

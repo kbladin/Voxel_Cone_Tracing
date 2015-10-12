@@ -46,19 +46,15 @@ private:
 	void renderGlobal();
 	void renderLocalDiffuse();
 
-	// Image store test
 	void init3DTexture();
-	void imageStoreTestRender();
+
 	GLuint tex3D;
 	int tex_size = 64;
-	int WIDTH = 200;
-	int HEIGHT = 200;
 	GLuint shader_rendertexture;
 	GLuint shader_display;
 
 
 	// FBO
-	FBO3D* fbo3D_;
 	FBO* fbo1_;
 	FBO* fbo2_;
 
