@@ -130,8 +130,8 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   glfwSetKeyCallback(window_, keyCallback);
   glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-  //voxelizeScene();
   init3DTexture();
+  voxelizeScene();
 }
 
 MyEngine::~MyEngine()
@@ -188,13 +188,16 @@ void MyEngine::init3DTexture()
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-  //glTexStorage2D(GL_TEXTURE_2D, 10, GL_RGBA32F, WIDTH, HEIGHT);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 
+  glTexStorage3D(GL_TEXTURE_3D, log2(tex_size), GL_RGBA8, tex_size, tex_size, tex_size);
   glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA8, tex_size, tex_size, tex_size, 0, GL_RGBA, GL_FLOAT, &data[0]);
 
+  glGenerateMipmap(GL_TEXTURE_3D);
 }
 
 void MyEngine::render()
@@ -202,8 +205,8 @@ void MyEngine::render()
   SimpleGraphicsEngine::render();
   
   voxelizeScene();
-  renderVolume();
-  //renderGlobal();
+  //renderVolume();
+  renderGlobal();
   //renderLocalDiffuse();
 }
 
@@ -217,7 +220,7 @@ void MyEngine::voxelizeScene()
   glDisable(GL_CULL_FACE);
   glDisable(GL_DEPTH_TEST);
   //glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-
+  glBindTexture(GL_TEXTURE_3D, tex3D);
   glBindImageTexture(0, tex3D, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
   glUseProgram(shader_voxelization_);
   glUniform1i(glGetUniformLocation(shader_voxelization_, "voxelImage"), 0);
@@ -228,6 +231,7 @@ void MyEngine::voxelizeScene()
 
   glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
 
+  glGenerateMipmap(GL_TEXTURE_3D);
 }
 
 void MyEngine::renderVolume()
@@ -302,7 +306,6 @@ void MyEngine::renderVolume()
 
 void MyEngine::renderGlobal()
 {
-  /*
   int w, h;
   glfwGetWindowSize(window_, &w, &h);
 
@@ -320,13 +323,12 @@ void MyEngine::renderGlobal()
 
   glUseProgram(shader_global_);
   glUniform1f(glGetUniformLocation(shader_global_, "time"), tmb.millitm);
-  glUniform1i(glGetUniformLocation(shader_global_, "textureSize"), fbo3D_->size_);
+  glUniform1i(glGetUniformLocation(shader_global_, "textureSize"), tex_size);
   glUniform1i(glGetUniformLocation(shader_global_, "texUnit3D"), 0);
   camera_->render(
       glm::mat4(),
       shader_global_);
   scene_->render(glm::mat4(), shader_global_);
-  */
 }
 
 void MyEngine::renderLocalDiffuse()
