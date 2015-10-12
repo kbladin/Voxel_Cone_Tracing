@@ -598,8 +598,9 @@ FBO3D::FBO3D(int size)
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 
   glTexStorage3D(GL_TEXTURE_3D, 10, GL_RGBA32F, size, size, size);
-  glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, size, size, size, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-  
+  glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, size, size, size, 0, GL_RGBA, GL_FLOAT, NULL);
+  //glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA, size, size, size, 0, GL_RGBA, GL_FLOAT, NULL);
+
   glGenerateMipmap(GL_TEXTURE_3D); // Allocate the mipmaps
 
   glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_3D, texid_, 0, 0);

@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 #define M_PI 3.14159
 
