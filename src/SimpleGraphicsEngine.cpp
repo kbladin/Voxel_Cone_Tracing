@@ -586,6 +586,12 @@ FBO3D::FBO3D(int size)
   fprintf(stderr, "%i \n", texid_);
   glBindTexture(GL_TEXTURE_3D, texid_);
 
+  std::vector<float> data;
+  data.resize(4 * size*size*size);
+  for (int i = 0; i < 4 * size*size*size; ++i)
+  {
+    data[i] = 0.0f;
+  }
 
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -598,7 +604,7 @@ FBO3D::FBO3D(int size)
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 
   glTexStorage3D(GL_TEXTURE_3D, 10, GL_RGBA32F, size, size, size);
-  glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, size, size, size, 0, GL_RGBA, GL_FLOAT, NULL);
+  glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, size, size, size, 0, GL_RGBA, GL_FLOAT, &data[0]);
   //glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA, size, size, size, 0, GL_RGBA, GL_FLOAT, NULL);
 
   glGenerateMipmap(GL_TEXTURE_3D); // Allocate the mipmaps

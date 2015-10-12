@@ -142,7 +142,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
   //voxelizeScene();
-  imageStoreTestInit();
+  init3DTexture();
 }
 
 MyEngine::~MyEngine()
@@ -185,9 +185,9 @@ void MyEngine::update()
   }
 }
 
-void MyEngine::imageStoreTestInit()
+void MyEngine::init3DTexture()
 {
-
+/*
   std::vector<float> data;
   data.resize(4 * WIDTH * HEIGHT);
   for (int i = 0; i < 4 * WIDTH * HEIGHT; ++i)
@@ -207,21 +207,17 @@ void MyEngine::imageStoreTestInit()
   //glTexStorage2D(GL_TEXTURE_2D, 10, GL_RGBA32F, WIDTH, HEIGHT);
 
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, WIDTH, HEIGHT, 0, GL_RGBA, GL_FLOAT, &data[0]);
+*/
 
-/*
   std::vector<float> data;
-  data.resize(4 * 64*64*64);
-  for (int i = 0; i < 4 * 64*64*64; ++i)
+  data.resize(4 * tex_size*tex_size*tex_size);
+  for (int i = 0; i < 4 * tex_size*tex_size*tex_size; ++i)
   {
     data[i] = 0.0f;
   }
-  data[2344+0] = 1.0f;
-  data[2344+1] = 1.0f;
-  data[2344+2] = 1.0f;
-  data[2344+3] = 1.0f;
 
-  glGenTextures(1, &tex);
-  glBindTexture(GL_TEXTURE_3D, tex);
+  glGenTextures(1, &tex3D);
+  glBindTexture(GL_TEXTURE_3D, tex3D);
 
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -232,13 +228,13 @@ void MyEngine::imageStoreTestInit()
 
   //glTexStorage2D(GL_TEXTURE_2D, 10, GL_RGBA32F, WIDTH, HEIGHT);
 
-  glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, 64, 64, 64, 0, GL_RGBA, GL_FLOAT, &data[0]);
-*/
+  glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, tex_size, tex_size, tex_size, 0, GL_RGBA, GL_FLOAT, &data[0]);
+
 }
 
 void MyEngine::imageStoreTestRender()
 {
-  
+  /*
   glBindImageTexture(0, tex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
   glUseProgram(shader_rendertexture);
   glUniform1i(glGetUniformLocation(shader_rendertexture, "image"), 0);
@@ -263,12 +259,12 @@ void MyEngine::imageStoreTestRender()
       glm::mat4(),
       shader_display);
   quad_->render(glm::mat4(), shader_display);
+*/
 
 
 
 
 
-/*
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
   glClearColor(0.0, 0.0, 0.0, 1);
@@ -276,7 +272,7 @@ void MyEngine::imageStoreTestRender()
   glDisable(GL_CULL_FACE);
   glDisable(GL_DEPTH_TEST);
 
-  glBindImageTexture(0, tex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+  glBindImageTexture(0, tex3D, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
   glUseProgram(shader_rendertexture);
   glUniform1i(glGetUniformLocation(shader_rendertexture, "image"), 0);
   camera_->render(
@@ -284,14 +280,14 @@ void MyEngine::imageStoreTestRender()
       shader_rendertexture);
   quad_->render(glm::mat4(), shader_rendertexture);
 
-  //glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
+  glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
 
 
 
 
 
-
-    // Render back size of cube
+/*
+    // Render back side of cube
   glBindFramebuffer(GL_FRAMEBUFFER, fbo1_->fb_);
   glViewport(0, 0, fbo1_->width_, fbo1_->height_);
 
@@ -364,10 +360,10 @@ void MyEngine::render()
 {
   SimpleGraphicsEngine::render();
   
-  imageStoreTestRender();
+  //imageStoreTestRender();
 
-  //voxelizeScene();
-  //renderVolume();
+  voxelizeScene();
+  renderVolume();
   //renderGlobal();
   //renderLocalDiffuse();
 }
@@ -446,7 +442,7 @@ void MyEngine::voxelizeScene()
 */
 
 
-
+/*
   glBindTexture(GL_TEXTURE_3D, fbo3D_->texid_);
   glActiveTexture(GL_TEXTURE0);
   glBindImageTexture(0, fbo3D_->texid_, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
@@ -456,6 +452,24 @@ void MyEngine::voxelizeScene()
       glm::mat4(),
       shader_voxelization_);
   quad_->render(glm::mat4(), shader_voxelization_);
+
+  glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
+*/
+
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+  glClearColor(0.0, 0.0, 0.0, 1);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glDisable(GL_CULL_FACE);
+  glDisable(GL_DEPTH_TEST);
+
+  glBindImageTexture(0, tex3D, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+  glUseProgram(shader_rendertexture);
+  glUniform1i(glGetUniformLocation(shader_rendertexture, "image"), 0);
+  camera_->render(
+      glm::mat4(),
+      shader_rendertexture);
+  quad_->render(glm::mat4(), shader_rendertexture);
 
   glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
 
@@ -500,7 +514,7 @@ void MyEngine::renderVolume()
   glfwGetWindowSize(window_, &w, &h);
 
   glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_3D, fbo3D_->texid_);
+  glBindTexture(GL_TEXTURE_3D, tex3D);
 
   glActiveTexture(GL_TEXTURE1);
   glBindTexture(GL_TEXTURE_2D, fbo1_->texid_);
@@ -520,7 +534,7 @@ void MyEngine::renderVolume()
 
 
   glUseProgram(shader_simplevolume_);
-  glUniform1i(glGetUniformLocation(shader_simplevolume_, "textureSize"), fbo3D_->size_);
+  glUniform1i(glGetUniformLocation(shader_simplevolume_, "textureSize"), tex_size);
   glUniform1i(glGetUniformLocation(shader_simplevolume_, "texUnit3D"), 0);
   glUniform1i(glGetUniformLocation(shader_simplevolume_, "texUnitBackCube"), 1);
   glUniform1i(glGetUniformLocation(shader_simplevolume_, "texUnitFrontCube"), 2);

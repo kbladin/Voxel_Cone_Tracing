@@ -47,9 +47,10 @@ private:
 	void renderLocalDiffuse();
 
 	// Image store test
-	void imageStoreTestInit();
+	void init3DTexture();
 	void imageStoreTestRender();
-	GLuint tex;
+	GLuint tex3D;
+	int tex_size = 64;
 	int WIDTH = 200;
 	int HEIGHT = 200;
 	GLuint shader_rendertexture;
