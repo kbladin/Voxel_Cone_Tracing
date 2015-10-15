@@ -1,6 +1,7 @@
 #version 450 core
 
 #define M_PI 3.14159
+#define M_SQRT3 1.732
 
 struct Material
 {
@@ -9,6 +10,7 @@ struct Material
 	float reflectance; // [0, 1]
 	float specular_reflectance; // [0, 1], part of reflectance
 	float specular_polish; // [0, 1]
+	float radiosity;
 };
 
 struct LightSource
@@ -51,10 +53,10 @@ vec3 coneTrace(vec3 rayDirection, float coneAngle, float multiSample)
 	float tanTheta2 = tan(coneAngle / 2);
 	float voxelSize = float(1) / textureSize;
 
-	vec3 rayOrigin = vertexPosition_worldspace + voxelSize*3 * normalize(normal_worldspace);
+	vec3 rayOrigin = vertexPosition_worldspace + voxelSize * 3 * normalize(normal_worldspace);
 	float sampleStep = voxelSize;
 	float t = voxelSize;
-	for (int i=0; i<50; i++)
+	for (int i=0; i<100; i++)
 	{
 		// Increment sampleStep
 		sampleStep = sampleStep * (1 + tanTheta2) / (1 - tanTheta2);
@@ -63,9 +65,9 @@ vec3 coneTrace(vec3 rayDirection, float coneAngle, float multiSample)
 		float d = (tanTheta2 * t * 2); // Sphere diameter
 		float mipLevel = log2(d / voxelSize);
 		
-		if (mipLevel > 6)
+		if (mipLevel > log2(textureSize))
 			break;
-
+		
 		vec3 samplePoint = (rayOrigin + rayDirection * t );
 		vec4 texSample = textureLod(texUnit3D, (samplePoint + vec3(1,1,1)) / 2, mipLevel);
 		
@@ -182,4 +184,5 @@ void main(){
 		color.rgb += calculateGlobalSpecular() * material.color_specular * material.reflectance * material.specular_reflectance;
 		color.rgb += calculateLocalSpecular() * material.color_specular * material.reflectance * material.specular_reflectance;
 	}
+	color.rgb += material.radiosity * material.color_diffuse;
 }

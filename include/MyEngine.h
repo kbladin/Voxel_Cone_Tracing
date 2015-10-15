@@ -16,6 +16,7 @@ struct Material
 	float reflectance; // [0, 1]
 	float specular_reflectance; // [0, 1], part of reflectance
 	float specular_polish; // [0, 1]
+	float radiosity;
 };
 
 //! The actual program extending SimpleGraphicsEngine

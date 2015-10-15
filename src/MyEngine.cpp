@@ -78,23 +78,25 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   camera_->addChild(basic_cam_);
 
   // Materials
-  material1_.color_diffuse = glm::vec3(0.5,1,1);
+  material1_.color_diffuse = glm::vec3(1,1,1);
   material1_.color_specular = glm::vec3(1,1,1);
   material1_.reflectance = 1;
-  material1_.specular_reflectance = 0;
-  material1_.specular_polish = 0.9;
+  material1_.specular_reflectance = 0.9;
+  material1_.specular_polish = 0.95;
+  material1_.radiosity = 0.0;
 
-  material2_.color_diffuse = glm::vec3(1,1,1);
-  material2_.color_specular = glm::vec3(1,1,1);
+  material2_.color_diffuse = glm::vec3(0.7,1,1);
+  material2_.color_specular = glm::vec3(0.7,1,1);
   material2_.reflectance = 1;
-  material2_.specular_reflectance = 0;
+  material2_.specular_reflectance = 0.3;
   material2_.specular_polish = 0.95;
+  material2_.radiosity = 0.0;
 
   // Objects
   //planet_ = new Planet();
   quad_ = new Quad();
   cube_ = new TriangleMesh("../data/meshes/cube.obj");
-  floor_mesh_ = new TriangleMesh("../data/meshes/cube.obj");
+  floor_mesh_ = new TriangleMesh("../data/meshes/floor.obj");
   bunny_mesh_ = new TriangleMesh("../data/meshes/bunny.obj");
 
   floor_ = new MyObject3D(material1_);
@@ -103,9 +105,8 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   light_ = new LightSource();
 
   floor_->addChild(floor_mesh_);
-  floor_->transform_matrix_ = glm::scale(glm::vec3(1.0f,0.2f,1.0f));
-  floor_->transform_matrix_ = glm::rotate(70.0f, glm::vec3(1.0f,0.0f,0.0f)) * floor_->transform_matrix_;
-  floor_->transform_matrix_ = glm::translate(glm::vec3(0.0f,-0.5f,-0.5f)) * floor_->transform_matrix_;
+  //floor_->transform_matrix_ = glm::rotate(70.0f, glm::vec3(1.0f,0.0f,0.0f)) * floor_->transform_matrix_;
+  floor_->transform_matrix_ = glm::translate(glm::vec3(0.0f,-0.35f,0.0f)) * floor_->transform_matrix_;
   
   bunny_->addChild(bunny_mesh_);
   bunny_->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(0.3,0.3,0.3));
@@ -173,9 +174,9 @@ void MyEngine::init3DTexture()
   glGenTextures(1, &tex3D);
   glBindTexture(GL_TEXTURE_3D, tex3D);
 
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
 
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -418,6 +419,7 @@ void MyObject3D::render(glm::mat4 M, GLuint program_ID)
   glUniform1f(glGetUniformLocation(program_ID, "material.reflectance"), material_.reflectance);
   glUniform1f(glGetUniformLocation(program_ID, "material.specular_reflectance"), material_.specular_reflectance);
   glUniform1f(glGetUniformLocation(program_ID, "material.specular_polish"), material_.specular_polish);
+  glUniform1f(glGetUniformLocation(program_ID, "material.radiosity"), material_.radiosity);
 
   Object3D::render(M, program_ID);
 }
