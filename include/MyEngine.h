@@ -66,17 +66,15 @@ private:
 	//Planet* planet_;
 	Quad* quad_;
 	TriangleMesh* cube_;
+	TriangleMesh* icosphere_;
 	TriangleMesh* floor_mesh_;
 	TriangleMesh* bunny_mesh_;
 
 	MyObject3D* bunny_;
 	MyObject3D* floor_;
+	MyObject3D* light_object_;
 
 	LightSource* light_;
-
-	// Materials
-	Material material1_;
-	Material material2_;
 
 	float roll_goal;
 	float pitch_goal;

@@ -63,7 +63,7 @@ vec3 coneTrace(vec3 rayDirection, float coneAngle, float multiSample)
 		t += sampleStep * multiSample;
 
 		float d = (tanTheta2 * t * 2); // Sphere diameter
-		float mipLevel = log2(d / voxelSize);
+		float mipLevel = log2(d / voxelSize) + 0;
 		
 		if (mipLevel > log2(textureSize))
 			break;
@@ -177,7 +177,7 @@ void main(){
 	if (material.reflectance != 0 && (1 - material.specular_reflectance) != 0)
 	{
 		color.rgb = calculateLocalDiffuse() * material.color_diffuse * material.reflectance * (1 - material.specular_reflectance);
-		color.rgb += calculateGlobalDiffuse(normalize(normal_worldspace)) * material.color_diffuse * material.reflectance * (1 - material.specular_reflectance);		
+		color.rgb += 1 *  calculateGlobalDiffuse(normalize(normal_worldspace)) * material.color_diffuse * material.reflectance * (1 - material.specular_reflectance);		
 	}
 	if (material.reflectance != 0 && material.specular_reflectance != 0)
 	{

@@ -78,29 +78,41 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   camera_->addChild(basic_cam_);
 
   // Materials
-  material1_.color_diffuse = glm::vec3(1,1,1);
-  material1_.color_specular = glm::vec3(1,1,1);
-  material1_.reflectance = 1;
-  material1_.specular_reflectance = 0.9;
-  material1_.specular_polish = 0.95;
-  material1_.radiosity = 0.0;
+  Material material1;
+  material1.color_diffuse = glm::vec3(1,1,1);
+  material1.color_specular = glm::vec3(1,1,1);
+  material1.reflectance = 1;
+  material1.specular_reflectance = 0.9;
+  material1.specular_polish = 0.97;
+  material1.radiosity = 0.0;
 
-  material2_.color_diffuse = glm::vec3(0.7,1,1);
-  material2_.color_specular = glm::vec3(0.7,1,1);
-  material2_.reflectance = 1;
-  material2_.specular_reflectance = 0.3;
-  material2_.specular_polish = 0.95;
-  material2_.radiosity = 0.0;
+  Material material2;
+  material2.color_diffuse = glm::vec3(0.7,1,1);
+  material2.color_specular = glm::vec3(0.7,1,1);
+  material2.reflectance = 1;
+  material2.specular_reflectance = 0;
+  material2.specular_polish = 0.95;
+  material2.radiosity = 0.0;
+
+  Material material_light; 
+  material_light.color_diffuse = glm::vec3(1,0.9,0.8);
+  material_light.color_specular = glm::vec3(0,0,0);
+  material_light.reflectance = 0;
+  material_light.specular_reflectance = 0;
+  material_light.specular_polish = 0;
+  material_light.radiosity = 10;
 
   // Objects
   //planet_ = new Planet();
   quad_ = new Quad();
   cube_ = new TriangleMesh("../data/meshes/cube.obj");
+  icosphere_ = new TriangleMesh("../data/meshes/icosphere.obj");
   floor_mesh_ = new TriangleMesh("../data/meshes/floor.obj");
   bunny_mesh_ = new TriangleMesh("../data/meshes/bunny.obj");
 
-  floor_ = new MyObject3D(material1_);
-  bunny_ = new MyObject3D(material2_);
+  floor_ = new MyObject3D(material1);
+  bunny_ = new MyObject3D(material2);
+  light_object_ = new MyObject3D(material_light);
 
   light_ = new LightSource();
 
@@ -111,9 +123,14 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   bunny_->addChild(bunny_mesh_);
   bunny_->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(0.3,0.3,0.3));
 
+  light_object_->addChild(icosphere_);
+  light_object_->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(0.5,0.5,0.5));
+  light_object_->transform_matrix_ = glm::translate(glm::vec3(-0.6f,0.6f,-0.6f)) * light_object_->transform_matrix_;
+
   scene_->addChild(bunny_);
   scene_->addChild(floor_);
   scene_->addChild(light_);
+  scene_->addChild(light_object_);
 
   // Set callback functions
   glfwSetScrollCallback(window_, mouseScrollCallback);
@@ -132,11 +149,13 @@ MyEngine::~MyEngine()
   //delete planet_;
   delete quad_;
   delete cube_;
+  delete icosphere_;
   delete floor_mesh_;
   delete bunny_mesh_;
 
   delete floor_;
   delete bunny_;
+  delete light_object_;
 
   delete light_;
 
