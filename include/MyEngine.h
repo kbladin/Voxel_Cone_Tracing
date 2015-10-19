@@ -43,6 +43,7 @@ public:
 	void Delay(T* input, T end_val, float speed);
 private:
 	void voxelizeScene();
+	void clearVoxels();
 	void renderVolume();
 	void renderGlobal();
 	void renderLocalDiffuse();
@@ -99,6 +100,7 @@ private:
 	GLuint shader_worldpositionoutput_;
 	GLuint shader_global_;
 	GLuint shader_voxelization_;
+	GLuint shader_clearvoxels_;
 };
 
 class MyObject3D : public Object3D {

@@ -55,7 +55,7 @@ vec3 coneTrace(vec3 rayDirection, float coneAngle, float multiSample)
 
 	vec3 rayOrigin = vertexPosition_worldspace + voxelSize * 3 * normalize(normal_worldspace);
 	float sampleStep = voxelSize;
-	float t = voxelSize;
+	float t = sampleStep;
 	for (int i=0; i<100; i++)
 	{
 		// Increment sampleStep
@@ -65,7 +65,7 @@ vec3 coneTrace(vec3 rayDirection, float coneAngle, float multiSample)
 		float d = (tanTheta2 * t * 2); // Sphere diameter
 		float mipLevel = log2(d / voxelSize) + 0;
 		
-		if (mipLevel > log2(textureSize))
+		if (mipLevel > log2(textureSize) - 1)
 			break;
 		
 		vec3 samplePoint = (rayOrigin + rayDirection * t );
@@ -73,10 +73,12 @@ vec3 coneTrace(vec3 rayDirection, float coneAngle, float multiSample)
 		
 		if (texSample.a > 0)
 		{
-			texSample.rgb /= texSample.a;
+			//texSample.rgb /= texSample.a;
 			// Alpha compositing
-			res.rgb = res.rgb + (1 - res.a) * texSample.a * texSample.rgb;
-	        res.a   = res.a   + (1 - res.a) * texSample.a;
+			//res.rgb = res.rgb + (1 - res.a) * texSample.rgb;
+	        //res.a   = res.a   + (1 - res.a) * texSample.a;
+	        res.a = res.a + texSample.a * (1 - res.a);
+	        res.rgb = (res.rgb * res.a + texSample.rgb * texSample.a * (1 - res.a)) / res.a;
 		}
 		if (res.a > 0.9)
 			break;
@@ -106,7 +108,7 @@ vec3 calculateGlobalDiffuse(vec3 n_worldspace)
 	vec3 n = n_worldspace;
    	vec3 rayDirection = n;
    	vec3 res;
-   	float coneAngle = M_PI / 10;
+   	float coneAngle = M_PI / 4;
 
    	// Pick a random vector helper
    	vec3 helper = normalize(vec3(1,0,0));
@@ -127,16 +129,16 @@ vec3 calculateGlobalDiffuse(vec3 n_worldspace)
    	res += coneTrace(rayDirection, coneAngle, 1) / 6;
 
    	// Next sample direction
-   	rayDirection = 0.5 * n + sqrt(3)/2 * (1/4 * (sqrt(5) - 1) * t + sqrt(5/8 + sqrt(5)/8) * bt);
+   	rayDirection = 0.5 * n + sqrt(3)/2 * (0.25 * (sqrt(5) - 1) * t + sqrt(float(5)/8 + sqrt(5)/8) * bt);
    	res += coneTrace(rayDirection, coneAngle, 1) / 6;
   	// Next sample direction
-   	rayDirection = 0.5 * n + sqrt(3)/2 * (1/4 * (sqrt(5) - 1) * t - sqrt(5/8 + sqrt(5)/8) * bt);
+   	rayDirection = 0.5 * n + sqrt(3)/2 * (0.25 * (sqrt(5) - 1) * t - sqrt(float(5)/8 + sqrt(5)/8) * bt);
    	res += coneTrace(rayDirection, coneAngle, 1) / 6;
 	// Next sample direction
-   	rayDirection = 0.5 * n - sqrt(3)/2 * (1/4 * (sqrt(5) + 1) * t + sqrt(5/8 - sqrt(5)/8) * bt);
+   	rayDirection = 0.5 * n - sqrt(3)/2 * (0.25 * (sqrt(5) + 1) * t + sqrt(float(5)/8 - sqrt(5)/8) * bt);
    	res += coneTrace(rayDirection, coneAngle, 1) / 6;
    	// Next sample direction
-   	rayDirection = 0.5 * n - sqrt(3)/2 * (1/4 * (sqrt(5) + 1) * t - sqrt(5/8 - sqrt(5)/8) * bt);
+   	rayDirection = 0.5 * n - sqrt(3)/2 * (0.25 * (sqrt(5) + 1) * t - sqrt(float(5)/8 - sqrt(5)/8) * bt);
    	res += coneTrace(rayDirection, coneAngle, 1) / 6;
 
    	return res;
@@ -144,8 +146,8 @@ vec3 calculateGlobalDiffuse(vec3 n_worldspace)
 
 vec3 calculateLocalSpecular()
 {
-	vec3 n = normalize(normal_viewspace);
-	vec3 v = normalize( vertexPosition_viewspace - vec3(0,0,0) );
+	vec3 n = normalize(normal_worldspace);
+	vec3 v = normalize( vertexPosition_worldspace - eyePosition_worldspace );
 	vec3 r = reflect(v, n);
 
 	vec3 light_diff = vertexPosition_worldspace - light.position;
@@ -168,7 +170,7 @@ vec3 calculateGlobalSpecular()
 	vec3 v = normalize( vertexPosition_worldspace - eyePosition_worldspace );
 	vec3 r = reflect(v, normalize(normal_worldspace));
 	float cone_angle = (1 - material.specular_polish) * M_PI / 2;
-	return coneTrace(r, cone_angle, 1);
+	return coneTrace(r, cone_angle, 0.1);
 }
 
 void main(){
@@ -177,7 +179,7 @@ void main(){
 	if (material.reflectance != 0 && (1 - material.specular_reflectance) != 0)
 	{
 		color.rgb = calculateLocalDiffuse() * material.color_diffuse * material.reflectance * (1 - material.specular_reflectance);
-		color.rgb += 1 *  calculateGlobalDiffuse(normalize(normal_worldspace)) * material.color_diffuse * material.reflectance * (1 - material.specular_reflectance);		
+		color.rgb += calculateGlobalDiffuse(normalize(normal_worldspace)) * material.color_diffuse * material.reflectance * (1 - material.specular_reflectance);		
 	}
 	if (material.reflectance != 0 && material.specular_reflectance != 0)
 	{

@@ -54,6 +54,13 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
     nullptr, // Tesselation evaluation shader file path
     "../shaders/voxelization/voxelization.geom", // Geometry shader file path
     "../shaders/voxelization/voxelization.frag"); // Fragment shader file path
+  ShaderManager::instance()->loadShader(
+    "SHADER_CLEARVOXELS",
+    "../shaders/voxelization/voxelization.vert", // Vertex shader file path
+    nullptr, // Tesselation control shader file path
+    nullptr, // Tesselation evaluation shader file path
+    "../shaders/voxelization/voxelization.geom", // Geometry shader file path
+    "../shaders/voxelization/clearvoxels.frag"); // Fragment shader file path
   
   shader_phong_ = ShaderManager::instance()->getShader("SHADER_PHONG");
   shader_plaintexture_ = ShaderManager::instance()->getShader("SHADER_PLAINTEXTURE");
@@ -61,6 +68,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   shader_worldpositionoutput_ = ShaderManager::instance()->getShader("SHADER_WORLDPOSITIONOUTPUT");
   shader_global_ = ShaderManager::instance()->getShader("SHADER_GLOBALRENDERER");
   shader_voxelization_ = ShaderManager::instance()->getShader("SHADER_VOXELIZATION");
+  shader_clearvoxels_ = ShaderManager::instance()->getShader("SHADER_CLEARVOXELS");
 
   yaw_goal = pitch_goal = roll_goal = 0;
   yaw = pitch = roll = 0;
@@ -90,7 +98,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   material2.color_diffuse = glm::vec3(0.7,1,1);
   material2.color_specular = glm::vec3(0.7,1,1);
   material2.reflectance = 1;
-  material2.specular_reflectance = 0;
+  material2.specular_reflectance = 0.0;
   material2.specular_polish = 0.95;
   material2.radiosity = 0.0;
 
@@ -130,7 +138,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   scene_->addChild(bunny_);
   scene_->addChild(floor_);
   scene_->addChild(light_);
-  scene_->addChild(light_object_);
+  //scene_->addChild(light_object_);
 
   // Set callback functions
   glfwSetScrollCallback(window_, mouseScrollCallback);
@@ -165,6 +173,8 @@ MyEngine::~MyEngine()
 
 void MyEngine::update()
 {
+  clearVoxels();
+
   SimpleGraphicsEngine::update();
 
   updateCameraController();
@@ -217,6 +227,30 @@ void MyEngine::render()
   //renderVolume();
   renderGlobal();
   //renderLocalDiffuse();
+}
+
+void MyEngine::clearVoxels()
+{
+  glViewport(0, 0, tex_size, tex_size);
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+  glClearColor(0.0, 0.0, 0.0, 1);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glDisable(GL_CULL_FACE);
+  glDisable(GL_DEPTH_TEST);
+  //glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+  glBindTexture(GL_TEXTURE_3D, tex3D);
+  glBindImageTexture(0, tex3D, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+  glUseProgram(shader_clearvoxels_);
+  glUniform1i(glGetUniformLocation(shader_clearvoxels_, "voxelImage"), 0);
+  voxelizer_camera_->render(
+      glm::mat4(),
+      shader_clearvoxels_, -1, 1, -1, 1, 1, -1);
+  scene_->render(glm::mat4(), shader_clearvoxels_);
+
+  glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
+
+  glGenerateMipmap(GL_TEXTURE_3D);
 }
 
 void MyEngine::voxelizeScene()
@@ -418,6 +452,16 @@ void MyEngine::updateCameraController()
   glm::mat4 T = glm::translate(camera_pos);
   
   camera_->transform_matrix_ = glm::inverse(T * R);
+
+
+  if (glfwGetKey(window_, GLFW_KEY_DOWN) == GLFW_PRESS)
+  {
+    bunny_->transform_matrix_ = bunny_->transform_matrix_ * glm::translate(glm::vec3(0,-0.1,0));
+  }
+  if (glfwGetKey(window_, GLFW_KEY_UP) == GLFW_PRESS)
+  {
+    bunny_->transform_matrix_ = bunny_->transform_matrix_ * glm::translate(glm::vec3(0,0.1,0));
+  }
 
 }
 
