@@ -51,26 +51,39 @@ vec3 coneTrace(vec3 rayDirection, float coneAngle, float multiSample)
 {
 	vec4 res = vec4(0,0,0,0);
 	float tanTheta2 = tan(coneAngle / 2);
-	float voxelSize = float(1) / textureSize;
+	float voxelSize = float(1) / textureSize * 2;
 
-	vec3 rayOrigin = vertexPosition_worldspace + voxelSize * 3 * normalize(normal_worldspace);
+	vec3 rayOrigin = vertexPosition_worldspace + voxelSize * M_SQRT3 * normalize(normal_worldspace);
 	float sampleStep = voxelSize;
 	float t = sampleStep;
-	for (int i=0; i<100; i++)
+	for (int i=0; i<200; i++)
 	{
 		// Increment sampleStep
 		sampleStep = sampleStep * (1 + tanTheta2) / (1 - tanTheta2);
-		t += sampleStep * multiSample;
+		t += 0.01;// sampleStep * multiSample;
 
 		float d = (tanTheta2 * t * 2); // Sphere diameter
 		float mipLevel = log2(d / voxelSize) + 0;
 		
 		if (mipLevel > log2(textureSize) - 1)
-			break;
+			mipLevel = log2(textureSize) - 1;
 		
+		/*
+		if (sampleStep * multiSample > textureSize / 2)
+		{
+			break;
+		}*/
+
 		vec3 samplePoint = (rayOrigin + rayDirection * t );
+		if (samplePoint.x < -1 || samplePoint.x > 1 || 
+			samplePoint.y < -1 || samplePoint.y > 1 ||
+			samplePoint.z < -1 || samplePoint.z > 1)
+		{
+			break;
+		}
 		vec4 texSample = textureLod(texUnit3D, (samplePoint + vec3(1,1,1)) / 2, mipLevel);
 		
+		/*
 		if (texSample.a > 0)
 		{
 			//texSample.rgb /= texSample.a;
@@ -81,6 +94,16 @@ vec3 coneTrace(vec3 rayDirection, float coneAngle, float multiSample)
 	        res.rgb = (res.rgb * res.a + texSample.rgb * texSample.a * (1 - res.a)) / res.a;
 		}
 		if (res.a > 0.9)
+			break;
+			*/
+		if (texSample.a > 0)
+		{
+			texSample.rgb /= texSample.a;
+			// Alpha compositing
+			res.rgb = res.rgb + (1 - res.a) * texSample.a * texSample.rgb;
+	        res.a   = res.a   + (1 - res.a) * texSample.a;
+		}
+		if (res.a > 0.8)
 			break;
 	}
 	return res.rgb;
@@ -120,6 +143,20 @@ vec3 calculateGlobalDiffuse(vec3 n_worldspace)
    	vec3 t = normalize(helper - dot(n,helper) * n);
    	vec3 bt = cross(t, n);
    	
+
+   	// First trace a cone in the normal direction
+   	res += coneTrace(rayDirection, coneAngle, 1);
+   	float inclination = M_PI / 4;
+
+   	for (int i = 0; i < 5; ++i)
+   	{
+   		rayDirection = n * cos(inclination) + sin(inclination) * (cos( i * 2 * M_PI / 5) * t + sin(i * 2 * M_PI / 5) * bt);
+   		res += coneTrace(normalize(rayDirection), coneAngle, 1);
+   	}
+ 	
+   	return res / 6;
+   	
+   	/*
    	// First trace a cone in the normal direction
    	res += coneTrace(rayDirection, coneAngle, 1) / 6;
 
@@ -141,7 +178,9 @@ vec3 calculateGlobalDiffuse(vec3 n_worldspace)
    	rayDirection = 0.5 * n - sqrt(3)/2 * (0.25 * (sqrt(5) + 1) * t - sqrt(float(5)/8 - sqrt(5)/8) * bt);
    	res += coneTrace(rayDirection, coneAngle, 1) / 6;
 
-   	return res;
+   	return res * 6 * 100;
+   	*/
+   	
 }
 
 vec3 calculateLocalSpecular()
@@ -174,8 +213,7 @@ vec3 calculateGlobalSpecular()
 }
 
 void main(){
-	// Local light contribution
-	color.a = 1;
+	color = vec4(0,0,0,1);
 	if (material.reflectance != 0 && (1 - material.specular_reflectance) != 0)
 	{
 		color.rgb = calculateLocalDiffuse() * material.color_diffuse * material.reflectance * (1 - material.specular_reflectance);

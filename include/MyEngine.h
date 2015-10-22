@@ -73,6 +73,10 @@ private:
 
 	MyObject3D* bunny_;
 	MyObject3D* floor_;
+	MyObject3D* roof_;
+	MyObject3D* l_wall_;
+	MyObject3D* r_wall_;
+	MyObject3D* b_wall_;
 	MyObject3D* light_object_;
 
 	LightSource* light_;

@@ -90,16 +90,32 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   material1.color_diffuse = glm::vec3(1,1,1);
   material1.color_specular = glm::vec3(1,1,1);
   material1.reflectance = 1;
-  material1.specular_reflectance = 0.9;
-  material1.specular_polish = 0.97;
+  material1.specular_reflectance = 0.0;
+  material1.specular_polish = 0.9;
   material1.radiosity = 0.0;
+
+  Material red;
+  red.color_diffuse = glm::vec3(1,0.5,0.5);
+  red.color_specular = glm::vec3(1,1,1);
+  red.reflectance = 1.0;
+  red.specular_reflectance = 0.0;
+  red.specular_polish = 0.9;
+  red.radiosity = 0.0;
+
+  Material green;
+  green.color_diffuse = glm::vec3(0.5,1,0.5);
+  green.color_specular = glm::vec3(1,1,1);
+  green.reflectance = 1.0;
+  green.specular_reflectance = 0.0;
+  green.specular_polish = 0.9;
+  green.radiosity = 0.0;
 
   Material material2;
   material2.color_diffuse = glm::vec3(0.7,1,1);
-  material2.color_specular = glm::vec3(0.7,1,1);
-  material2.reflectance = 1;
-  material2.specular_reflectance = 0.0;
-  material2.specular_polish = 0.95;
+  material2.color_specular = glm::vec3(1,1,1);
+  material2.reflectance = 1.0;
+  material2.specular_reflectance = 1.0;
+  material2.specular_polish = 0.99;
   material2.radiosity = 0.0;
 
   Material material_light; 
@@ -119,24 +135,47 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   bunny_mesh_ = new TriangleMesh("../data/meshes/bunny.obj");
 
   floor_ = new MyObject3D(material1);
+  roof_ = new MyObject3D(material1);
+  l_wall_ = new MyObject3D(red);
+  r_wall_ = new MyObject3D(green);
+  b_wall_ = new MyObject3D(material1);
   bunny_ = new MyObject3D(material2);
   light_object_ = new MyObject3D(material_light);
 
   light_ = new LightSource();
 
   floor_->addChild(floor_mesh_);
-  //floor_->transform_matrix_ = glm::rotate(70.0f, glm::vec3(1.0f,0.0f,0.0f)) * floor_->transform_matrix_;
-  floor_->transform_matrix_ = glm::translate(glm::vec3(0.0f,-0.35f,0.0f)) * floor_->transform_matrix_;
+  floor_->transform_matrix_ = glm::translate(glm::vec3(0.0f,-1.0f,0.0f)) * floor_->transform_matrix_;
   
+  roof_->addChild(floor_mesh_);
+  roof_->transform_matrix_ = glm::translate(glm::vec3(0.0f,1.0f,0.0f)) * roof_->transform_matrix_;
+  
+  l_wall_->addChild(floor_mesh_);
+  l_wall_->transform_matrix_ = glm::rotate(float(M_PI / 2), glm::vec3(0.0f,0.0f,1.0f)) * l_wall_->transform_matrix_;
+  l_wall_->transform_matrix_ = glm::translate(glm::vec3(-1.0f,0.0f,0.0f)) * l_wall_->transform_matrix_;
+  
+  r_wall_->addChild(floor_mesh_);
+  r_wall_->transform_matrix_ = glm::rotate(float(M_PI / 2), glm::vec3(0.0f,0.0f,1.0f)) * r_wall_->transform_matrix_;
+  r_wall_->transform_matrix_ = glm::translate(glm::vec3(1.0f,0.0f,0.0f)) * r_wall_->transform_matrix_;
+  
+  b_wall_->addChild(floor_mesh_);
+  b_wall_->transform_matrix_ = glm::rotate(float(M_PI / 2), glm::vec3(1.0f,0.0f,0.0f)) * b_wall_->transform_matrix_;
+  b_wall_->transform_matrix_ = glm::translate(glm::vec3(0.0f,0.0f,-1.0f)) * b_wall_->transform_matrix_;
+
   bunny_->addChild(bunny_mesh_);
   bunny_->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(0.3,0.3,0.3));
 
   light_object_->addChild(icosphere_);
   light_object_->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(0.5,0.5,0.5));
-  light_object_->transform_matrix_ = glm::translate(glm::vec3(-0.6f,0.6f,-0.6f)) * light_object_->transform_matrix_;
+  light_object_->transform_matrix_ = glm::translate(glm::vec3(0.0,1.0f,0.0)) * light_object_->transform_matrix_;
+
+  scene_->addChild(floor_);
+  scene_->addChild(roof_);
+  scene_->addChild(l_wall_);
+  scene_->addChild(r_wall_);
+  scene_->addChild(b_wall_);
 
   scene_->addChild(bunny_);
-  scene_->addChild(floor_);
   scene_->addChild(light_);
   //scene_->addChild(light_object_);
 
@@ -162,6 +201,10 @@ MyEngine::~MyEngine()
   delete bunny_mesh_;
 
   delete floor_;
+  delete roof_;
+  delete l_wall_;
+  delete r_wall_;
+  delete b_wall_;
   delete bunny_;
   delete light_object_;
 

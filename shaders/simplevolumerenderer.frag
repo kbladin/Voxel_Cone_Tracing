@@ -26,10 +26,11 @@ void main(){
 
 	for (int i=0; i<nSteps; i++)
 	{
-		int mipLevel = 0;
+		float mipLevel = 4;
 		vec3 samplePoint = (rayOrigin + rayDirection * rayStep * i);
 		samplePoint = vec3(samplePoint.x, samplePoint.y, samplePoint.z);
 		vec4 texSample = textureLod(texUnit3D, (samplePoint + vec3(1,1,1)) / 2, mipLevel);	
+
 
 		if (texSample.a > 0)
 		{
@@ -38,7 +39,7 @@ void main(){
 			res.rgb = res.rgb + (1 - res.a) * texSample.a * texSample.rgb;
 	        res.a   = res.a   + (1 - res.a) * texSample.a;
 		}
-		if (res.a > 0.9)
+		if (res.a > 0.8)
 			break;
 	}
 	color = res;
