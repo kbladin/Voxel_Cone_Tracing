@@ -314,7 +314,7 @@ void OrthoCamera::render(
 
 LightSource::LightSource()
 {
-  intensity = 0.5f;
+  intensity = 0.7f;
   color = glm::vec3(1.0, 1.0, 1.0);
   position = glm::vec3(0.0, 1.0, 0.0);
 }

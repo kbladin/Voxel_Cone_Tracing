@@ -72,6 +72,7 @@ private:
 	TriangleMesh* bunny_mesh_;
 
 	MyObject3D* bunny_;
+	MyObject3D* bunny2_;
 	MyObject3D* floor_;
 	MyObject3D* roof_;
 	MyObject3D* l_wall_;

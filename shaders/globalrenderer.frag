@@ -51,6 +51,8 @@ vec3 coneTrace(vec3 rayDirection, float coneAngle, float multiSample)
 {
 	vec4 res = vec4(0,0,0,0);
 	float tanTheta2 = tan(coneAngle / 2);
+	float tanAlpha2 = tan(coneAngle / (2*multiSample));
+	float sampleFactor = (1 + tanAlpha2) / (1 - tanAlpha2);
 	float voxelSize = float(1) / textureSize * 2;
 
 	vec3 rayOrigin = vertexPosition_worldspace + voxelSize * M_SQRT3 * normalize(normal_worldspace);
@@ -59,15 +61,19 @@ vec3 coneTrace(vec3 rayDirection, float coneAngle, float multiSample)
 	for (int i=0; i<200; i++)
 	{
 		// Increment sampleStep
-		sampleStep = sampleStep * (1 + tanTheta2) / (1 - tanTheta2);
-		t += 0.01;// sampleStep * multiSample;
+		sampleStep = sampleStep * sampleFactor;
+		if (sampleStep > 0.05)
+		{
+			sampleStep = 0.05;
+		}
+		t += sampleStep;
 
 		float d = (tanTheta2 * t * 2); // Sphere diameter
 		float mipLevel = log2(d / voxelSize) + 0;
-		
+		/*
 		if (mipLevel > log2(textureSize) - 1)
 			mipLevel = log2(textureSize) - 1;
-		
+		*/
 		/*
 		if (sampleStep * multiSample > textureSize / 2)
 		{
@@ -143,15 +149,15 @@ vec3 calculateGlobalDiffuse(vec3 n_worldspace)
    	vec3 t = normalize(helper - dot(n,helper) * n);
    	vec3 bt = cross(t, n);
    	
-
+   	float multiSample = 4;
    	// First trace a cone in the normal direction
-   	res += coneTrace(rayDirection, coneAngle, 1);
+   	res += coneTrace(rayDirection, coneAngle, multiSample);
    	float inclination = M_PI / 4;
 
    	for (int i = 0; i < 5; ++i)
    	{
    		rayDirection = n * cos(inclination) + sin(inclination) * (cos( i * 2 * M_PI / 5) * t + sin(i * 2 * M_PI / 5) * bt);
-   		res += coneTrace(normalize(rayDirection), coneAngle, 1);
+   		res += coneTrace(normalize(rayDirection), coneAngle, multiSample	);
    	}
  	
    	return res / 6;
@@ -208,8 +214,8 @@ vec3 calculateGlobalSpecular()
 {
 	vec3 v = normalize( vertexPosition_worldspace - eyePosition_worldspace );
 	vec3 r = reflect(v, normalize(normal_worldspace));
-	float cone_angle = (1 - material.specular_polish) * M_PI / 2;
-	return coneTrace(r, cone_angle, 0.1);
+	float cone_angle = atan((1 - material.specular_polish) * M_PI / 2);
+	return coneTrace(r, cone_angle, 1);
 }
 
 void main(){

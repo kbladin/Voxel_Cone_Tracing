@@ -111,12 +111,20 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   green.radiosity = 0.0;
 
   Material material2;
-  material2.color_diffuse = glm::vec3(0.7,1,1);
+  material2.color_diffuse = glm::vec3(0.5,1,1);
   material2.color_specular = glm::vec3(1,1,1);
   material2.reflectance = 1.0;
-  material2.specular_reflectance = 1.0;
+  material2.specular_reflectance = 0.0;
   material2.specular_polish = 0.99;
   material2.radiosity = 0.0;
+
+  Material material3;
+  material3.color_diffuse = glm::vec3(1,1,1);
+  material3.color_specular = glm::vec3(1,1,0.5);
+  material3.reflectance = 1.0;
+  material3.specular_reflectance = 1.0;
+  material3.specular_polish = 1;
+  material3.radiosity = 0.0;
 
   Material material_light; 
   material_light.color_diffuse = glm::vec3(1,0.9,0.8);
@@ -138,8 +146,9 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   roof_ = new MyObject3D(material1);
   l_wall_ = new MyObject3D(red);
   r_wall_ = new MyObject3D(green);
-  b_wall_ = new MyObject3D(material1);
-  bunny_ = new MyObject3D(material2);
+  b_wall_ = new MyObject3D(material3);
+  bunny_ = new MyObject3D(material3);
+  bunny2_ = new MyObject3D(material3);
   light_object_ = new MyObject3D(material_light);
 
   light_ = new LightSource();
@@ -164,6 +173,11 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
 
   bunny_->addChild(bunny_mesh_);
   bunny_->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(0.3,0.3,0.3));
+  bunny_->transform_matrix_ = glm::translate(glm::vec3(-0.0f,0.0f,0.0f)) * bunny_->transform_matrix_;
+
+  bunny2_->addChild(bunny_mesh_);
+  bunny2_->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(0.3,0.3,0.3));
+  bunny2_->transform_matrix_ = glm::translate(glm::vec3(0.5f,0.0f,0.0f)) * bunny2_->transform_matrix_;
 
   light_object_->addChild(icosphere_);
   light_object_->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(0.5,0.5,0.5));
@@ -176,6 +190,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   scene_->addChild(b_wall_);
 
   scene_->addChild(bunny_);
+  //scene_->addChild(bunny2_);
   scene_->addChild(light_);
   //scene_->addChild(light_object_);
 
@@ -206,6 +221,7 @@ MyEngine::~MyEngine()
   delete r_wall_;
   delete b_wall_;
   delete bunny_;
+  delete bunny2_;
   delete light_object_;
 
   delete light_;
@@ -500,10 +516,12 @@ void MyEngine::updateCameraController()
   if (glfwGetKey(window_, GLFW_KEY_DOWN) == GLFW_PRESS)
   {
     bunny_->transform_matrix_ = bunny_->transform_matrix_ * glm::translate(glm::vec3(0,-0.1,0));
+    bunny2_->transform_matrix_ = bunny2_->transform_matrix_ * glm::translate(glm::vec3(0,-0.1,0));
   }
   if (glfwGetKey(window_, GLFW_KEY_UP) == GLFW_PRESS)
   {
     bunny_->transform_matrix_ = bunny_->transform_matrix_ * glm::translate(glm::vec3(0,0.1,0));
+    bunny2_->transform_matrix_ = bunny2_->transform_matrix_ * glm::translate(glm::vec3(0,0.1,0));
   }
 
 }
