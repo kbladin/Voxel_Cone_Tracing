@@ -51,7 +51,7 @@ private:
 	void init3DTexture();
 
 	GLuint tex3D;
-	int tex_size = 128;
+	int tex_size = 64;
 
 
 	// FBO
@@ -82,13 +82,13 @@ private:
 
 	LightSource* light_;
 
-	float roll_goal;
-	float pitch_goal;
-	float yaw_goal;
+	float roll_goal = 0;
+	float pitch_goal = 0;
+	float yaw_goal = 0;
 
-	float roll;
-	float pitch;
-	float yaw;
+	float roll = 0;
+	float pitch = 0;
+	float yaw = 0;
 
 	glm::vec3 camera_pos; 
 	glm::vec3 camera_pos_goal; 
