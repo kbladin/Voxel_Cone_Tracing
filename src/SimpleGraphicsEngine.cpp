@@ -335,6 +335,8 @@ void LightSource::render(glm::mat4 M, GLuint program_ID)
 //Object3D* SimpleGraphicsEngine::camera_;
 //Object3D* SimpleGraphicsEngine::viewspace_ortho_camera_;
 
+GLFWwindow* SimpleGraphicsEngine::window_;
+
 SimpleGraphicsEngine::SimpleGraphicsEngine()
 {
   initialize();

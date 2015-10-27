@@ -6,11 +6,24 @@
 #include <sstream> 
 #include <sys/timeb.h>
 
+#include <AntTweakBar.h>
 
 Object3D* MyEngine::camera_;
+bool MyEngine::mouse_control_;
 
 MyEngine::MyEngine() : SimpleGraphicsEngine()
 {
+  mouse_control_ = true;
+
+  TwInit(TW_OPENGL_CORE, NULL); // for core profile
+/*
+  hej = 0;
+  TwBar *myBar;
+  myBar = TwNewBar("NameOfMyTweakBar");
+  TwAddVarRW(myBar, "NameOfMyVariable", TW_TYPE_INT8, &tex_size, " min=8 max=256 step=8 group=Engine label='Texture size' ");
+*/
+  TwWindowSize(640 * 2, 480 * 2);
+
   // Shaders
   ShaderManager::instance()->loadShader(
     "SHADER_PHONG",
@@ -114,7 +127,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   material2.color_diffuse = glm::vec3(0.8,0.8,1);
   material2.color_specular = glm::vec3(1,1,1);
   material2.reflectance = 1.0;
-  material2.specular_reflectance = 0.6;
+  material2.specular_reflectance = 0.0;
   material2.specular_polish = 0.9;
   material2.radiosity = 0.0;
 
@@ -122,7 +135,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   material3.color_diffuse = glm::vec3(1,1,1);
   material3.color_specular = glm::vec3(1,1,0.5);
   material3.reflectance = 1.0;
-  material3.specular_reflectance = 0.5;
+  material3.specular_reflectance = 0.0;
   material3.specular_polish = 0.99;
   material3.radiosity = 0.0;
 
@@ -152,6 +165,8 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   light_object_ = new MyObject3D(material_light);
 
   light_ = new LightSource();
+
+  createMaterialTweakbar(bunny_->getMaterialPointer());
 
   floor_->addChild(floor_mesh_);
   floor_->transform_matrix_ = glm::translate(glm::vec3(0.0f,-1.0f,0.0f)) * floor_->transform_matrix_;
@@ -195,8 +210,19 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   scene_->addChild(light_object_);
 
   // Set callback functions
+  /*
+  glfwSetMouseButtonCallback(window_, (GLFWmousebuttonfun) TwEventMouseButtonGLFW);
+  glfwSetCursorPosCallback(window_, (GLFWcursorposfun) TwEventMousePosGLFW);
+  glfwSetScrollCallback(window_, (GLFWscrollfun) TwEventMouseWheelGLFW);
+  glfwSetKeyCallback(window_, (GLFWkeyfun) TwEventKeyGLFW);
+  glfwSetCharCallback(window_, (GLFWcharfun) TwEventCharGLFW);
+*/
+
+  glfwSetCursorPosCallback(window_, mousePosCallback);
+  glfwSetMouseButtonCallback(window_, mouseButtonCallback);
   glfwSetScrollCallback(window_, mouseScrollCallback);
   glfwSetKeyCallback(window_, keyCallback);
+
   glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
   init3DTexture();
@@ -286,6 +312,11 @@ void MyEngine::render()
   //renderVolume();
   renderGlobal();
   //renderLocalDiffuse();
+
+  int w, h;
+  glfwGetWindowSize(window_, &w, &h);
+  TwWindowSize(w, h);
+  TwDraw();  // draw the tweak bar(s)
 }
 
 void MyEngine::clearVoxels()
@@ -458,6 +489,22 @@ void MyEngine::renderLocalDiffuse()
   scene_->render(glm::mat4(), shader_phong_);
 }
 
+void MyEngine::mousePosCallback(GLFWwindow * window, double x, double y)
+{
+  if (!TwEventMousePosGLFW(x,y))
+  {
+    /* code */
+  }
+}
+
+void MyEngine::mouseButtonCallback(GLFWwindow * window, int button, int action, int mods)
+{
+  if (!TwEventMouseButtonGLFW(button, action))
+  {
+    /* code */
+  }
+}
+
 void MyEngine::mouseScrollCallback(GLFWwindow * window, double dx, double dy)
 {
 
@@ -470,6 +517,36 @@ void MyEngine::keyCallback(
   int action,
   int mods)
 {
+  if (!TwEventKeyGLFW(key, action))
+  {
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+    {
+      //glfwSetWindowShouldClose(window_  , GL_TRUE);
+      int mode = glfwGetInputMode(window_, GLFW_CURSOR);
+      if (mode == GLFW_CURSOR_DISABLED)
+      {
+        glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        mouse_control_ = false;
+      }
+      else
+      {
+        glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        mouse_control_ = true;
+      }
+    }
+  }
+}
+
+void MyEngine::createMaterialTweakbar(Material* m)
+{
+  TwBar *myBar;
+  myBar = TwNewBar("NameOfMyTweakBar");
+  TwAddVarRW(myBar, "diffuseColor", TW_TYPE_COLOR3F, &m->color_diffuse.r, " min=0 max=1 step=0.01 label='Diffuse color' ");
+  TwAddVarRW(myBar, "specularColor", TW_TYPE_COLOR3F, &m->color_specular.r, " min=0 max=1 step=0.01 label='Specular color' ");
+  TwAddVarRW(myBar, "reflectance", TW_TYPE_FLOAT, &m->reflectance, " min=0 max=1 step=0.01 label='reflectance' ");
+  TwAddVarRW(myBar, "specularReflectance", TW_TYPE_FLOAT, &m->specular_reflectance, " min=0 max=1 step=0.01 label='Specular reflectance' ");
+  TwAddVarRW(myBar, "specularPolish", TW_TYPE_FLOAT, &m->specular_polish, " min=0 max=1 step=0.01 label='Specular polish' ");
+  TwAddVarRW(myBar, "radiosity", TW_TYPE_FLOAT, &m->radiosity, " min=0 max=2 step=0.01 label='Radiosity' ");
 }
 
 void MyEngine::updateCameraController()
@@ -483,21 +560,22 @@ void MyEngine::updateCameraController()
     camera_pos_diff.z = 0.1;
   if (glfwGetKey(window_, GLFW_KEY_W) == GLFW_PRESS)
     camera_pos_diff.z = -0.1;
-  if (glfwGetKey(window_, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-    glfwSetWindowShouldClose(window_  , GL_TRUE);
+
 
   double xmouse_current, ymouse_current;
   glfwGetCursorPos(window_, &xmouse_current, &ymouse_current);
 
-  float xmouse_diff = xmouse_current - xmouse;
-  float ymouse_diff = ymouse_current - ymouse;
+  if (mouse_control_)
+  {
+    float xmouse_diff = xmouse_current - xmouse;
+    float ymouse_diff = ymouse_current - ymouse;
+  
+    xmouse = xmouse_current;
+    ymouse = ymouse_current;
 
-  xmouse = xmouse_current;
-  ymouse = ymouse_current;
-
-  yaw_goal -= xmouse_diff * 0.002;
-  roll_goal -= ymouse_diff * 0.002;
-
+    yaw_goal -= xmouse_diff * 0.002;
+    roll_goal -= ymouse_diff * 0.002;
+  }
   Delay(&yaw, yaw_goal, 0.4);
   Delay(&roll, roll_goal, 0.4);
 

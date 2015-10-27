@@ -20,6 +20,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake/Modules)
 find_package(PkgConfig REQUIRED)
 find_package(OPENGL REQUIRED)
 find_package(GLEW REQUIRED)
+find_package(ANTTWEAKBAR REQUIRED)
 #find_package(GLFW3 REQUIRED)
 #find_package(ASSIMP REQUIRED)
 
@@ -38,7 +39,7 @@ endif(APPLE)
 include_directories(${GLEW_INCLUDE_DIR})
 include_directories(${GLFW_INCLUDE_DIRS})
 include_directories(${ASSIMP_INCLUDE_DIRS})
-#include_directories(${ANT_TWEAK_BAR_INCLUDE_PATH})
+include_directories(${ANT_TWEAK_BAR_INCLUDE_PATH})
 
 # Our own include directory
 set(COMMON_INCLUDES ${PROJECT_SOURCE_DIR}/include)
@@ -69,7 +70,7 @@ set_target_properties(Voxelization PROPERTIES COMPILE_FLAGS "-std=c++11")
 set_target_properties(Voxelization_lib PROPERTIES COMPILE_FLAGS "-std=c++11")
 
 # Link all the libraries (including our own)
-target_link_libraries(Voxelization Voxelization_lib ${ASSIMP_LIBRARIES} ${OPENGL_LIBRARIES} ${OPENGL_glu_LIBRARY} ${GLEW_LIBRARY} ${GLFW_LIBRARIES} ${CMAKE_CXX_FLAGS})
+target_link_libraries(Voxelization Voxelization_lib ${ASSIMP_LIBRARIES} ${OPENGL_LIBRARIES} ${OPENGL_glu_LIBRARY} ${GLEW_LIBRARY} ${GLFW_LIBRARIES} ${ANT_TWEAK_BAR_LIBRARY} ${CMAKE_CXX_FLAGS})
 
 ######### OPENGL LIBRARY (ONLY FOR OSX) #############
 if(APPLE)

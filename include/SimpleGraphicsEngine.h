@@ -140,7 +140,7 @@ namespace SGE {
     virtual void render() = 0;
     
     // Probably should be private...
-    GLFWwindow* window_;
+    static GLFWwindow* window_;
     
     double dt_;
     

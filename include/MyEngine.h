@@ -31,6 +31,8 @@ public:
 	virtual void update();
 	virtual void render();
 	static void mouseScrollCallback(GLFWwindow * window, double dx, double dy);
+	static void mousePosCallback(GLFWwindow * window, double x, double y);
+	static void mouseButtonCallback(GLFWwindow * window, int button, int action, int mods);
 	static void cursorPosCallback(GLFWwindow * window, double x, double y);
 	static void keyCallback(
 		GLFWwindow * window,
@@ -50,7 +52,13 @@ private:
 
 	void init3DTexture();
 
+	void createMaterialTweakbar(Material* m);
+
 	GLuint tex3D;
+
+	// Tweakable variables
+	static bool mouse_control_;
+	float hej;
 	int tex_size = 64;
 
 
@@ -113,6 +121,7 @@ public:
 	MyObject3D(Material material);
 	~MyObject3D();
 	void render(glm::mat4 M, GLuint program_ID);
+	Material* getMaterialPointer(){return &material_;};
 private:
 	Material material_;
 };
