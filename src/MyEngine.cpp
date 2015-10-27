@@ -169,8 +169,9 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   createMaterialTweakbar(bunny_->getMaterialPointer());
 
   floor_->addChild(floor_mesh_);
+  floor_->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(2,2,2));
   floor_->transform_matrix_ = glm::translate(glm::vec3(0.0f,-1.0f,0.0f)) * floor_->transform_matrix_;
-  
+  /*
   roof_->addChild(floor_mesh_);
   roof_->transform_matrix_ = glm::translate(glm::vec3(0.0f,1.0f,0.0f)) * roof_->transform_matrix_;
   
@@ -185,7 +186,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   b_wall_->addChild(floor_mesh_);
   b_wall_->transform_matrix_ = glm::rotate(float(M_PI / 2), glm::vec3(1.0f,0.0f,0.0f)) * b_wall_->transform_matrix_;
   b_wall_->transform_matrix_ = glm::translate(glm::vec3(0.0f,0.0f,-1.0f)) * b_wall_->transform_matrix_;
-
+*/
   bunny_->addChild(bunny_mesh_);
   bunny_->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(0.3,0.3,0.3));
   bunny_->transform_matrix_ = glm::translate(glm::vec3(-0.0f,0.0f,0.0f)) * bunny_->transform_matrix_;
@@ -333,6 +334,8 @@ void MyEngine::clearVoxels()
   glBindImageTexture(0, tex3D, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
   glUseProgram(shader_clearvoxels_);
   glUniform1i(glGetUniformLocation(shader_clearvoxels_, "voxelImage"), 0);
+  glUniform1f(glGetUniformLocation(shader_clearvoxels_, "sceneScale"), scene_scale);
+
   voxelizer_camera_->render(
       glm::mat4(),
       shader_clearvoxels_, -1, 1, -1, 1, 1, -1);
@@ -357,6 +360,7 @@ void MyEngine::voxelizeScene()
   glBindImageTexture(0, tex3D, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
   glUseProgram(shader_voxelization_);
   glUniform1i(glGetUniformLocation(shader_voxelization_, "voxelImage"), 0);
+  glUniform1f(glGetUniformLocation(shader_voxelization_, "sceneScale"), scene_scale);
   voxelizer_camera_->render(
       glm::mat4(),
       shader_voxelization_, -1, 1, -1, 1, 1, -1);
@@ -430,6 +434,7 @@ void MyEngine::renderVolume()
   glUniform1i(glGetUniformLocation(shader_simplevolume_, "texUnit3D"), 0);
   glUniform1i(glGetUniformLocation(shader_simplevolume_, "texUnitBackCube"), 1);
   glUniform1i(glGetUniformLocation(shader_simplevolume_, "texUnitFrontCube"), 2);
+  glUniform1f(glGetUniformLocation(shader_simplevolume_, "sceneScale"), scene_scale);
 
   camera_->render(
       glm::mat4(),
@@ -458,6 +463,8 @@ void MyEngine::renderGlobal()
   glUniform1f(glGetUniformLocation(shader_global_, "time"), tmb.millitm);
   glUniform1i(glGetUniformLocation(shader_global_, "textureSize"), tex_size);
   glUniform1i(glGetUniformLocation(shader_global_, "texUnit3D"), 0);
+  glUniform1f(glGetUniformLocation(shader_global_, "sceneScale"), scene_scale);
+
   camera_->render(
       glm::mat4(),
       shader_global_);

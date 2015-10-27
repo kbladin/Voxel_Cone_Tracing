@@ -28,6 +28,7 @@ in vec3 eyePosition_worldspace;
 
 uniform float time;
 uniform int textureSize;
+uniform float sceneScale;
 uniform sampler3D texUnit3D;
 uniform Material material;
 uniform LightSource light;
@@ -56,7 +57,7 @@ vec3 coneTrace(vec3 rayDirection, float coneAngle, float multiSample, int steps)
 	float sampleFactor = (1 + tanAlpha2) / (1 - tanAlpha2);
 	float voxelSize = float(1) / textureSize * 2;
 
-	vec3 rayOrigin = vertexPosition_worldspace + voxelSize * M_SQRT3 * normalize(normal_worldspace);
+	vec3 rayOrigin = vertexPosition_worldspace + voxelSize * sceneScale * M_SQRT3 * normalize(normal_worldspace);
 	float sampleStep = 0.01;
 	float t = sampleStep;
 	for (int i=0; i<steps; i++)
@@ -82,13 +83,13 @@ vec3 coneTrace(vec3 rayDirection, float coneAngle, float multiSample, int steps)
 		}*/
 
 		vec3 samplePoint = (rayOrigin + rayDirection * t );
-		if (samplePoint.x < -1 || samplePoint.x > 1 || 
-			samplePoint.y < -1 || samplePoint.y > 1 ||
-			samplePoint.z < -1 || samplePoint.z > 1)
+		if (samplePoint.x < -sceneScale || samplePoint.x > sceneScale || 
+			samplePoint.y < -sceneScale || samplePoint.y > sceneScale ||
+			samplePoint.z < -sceneScale || samplePoint.z > sceneScale)
 		{
 			break;
 		}
-		vec4 texSample = textureLod(texUnit3D, (samplePoint + vec3(1,1,1)) / 2, mipLevel) * sampleStep * 100;
+		vec4 texSample = textureLod(texUnit3D, (samplePoint + vec3(1,1,1)) / 2 / sceneScale, mipLevel) * sampleStep * 100;
 		
 		/*
 		if (texSample.a > 0)

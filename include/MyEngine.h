@@ -59,7 +59,10 @@ private:
 	// Tweakable variables
 	static bool mouse_control_;
 	float hej;
+
+	// Constants
 	int tex_size = 128;
+	float scene_scale = 2;
 
 
 	// FBO

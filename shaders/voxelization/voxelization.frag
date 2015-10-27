@@ -28,6 +28,7 @@ layout(RGBA8) uniform image3D voxelImage;
 //layout ( r32ui ) coherent volatile uniform uimage3D voxelImage;
 uniform Material material;
 uniform LightSource light;
+uniform float sceneScale;
 
 vec3 calculateLocalDiffuse()
 {
@@ -96,6 +97,6 @@ void main() {
 	}
 	color += material.radiosity * material.color_diffuse;
 
-    imageStore(voxelImage, texCoord, vec4(color, 1.0f));
+    imageStore(voxelImage, ivec3(texCoord / sceneScale), vec4(color, 1.0f));
     //imageAtomicRGBA8Avg(voxelImage, texCoord, vec4(color, 1.0f));
 }

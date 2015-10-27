@@ -11,6 +11,7 @@ uniform mat4 V;
 uniform mat4 P;
 
 uniform int textureSize;
+uniform float sceneScale;
 
 uniform sampler3D texUnit3D;
 uniform sampler2D texUnitBackCube;
@@ -27,9 +28,9 @@ void main(){
 	for (int i=0; i<nSteps; i++)
 	{
 		float mipLevel = 0;
-		vec3 samplePoint = (rayOrigin + rayDirection * rayStep * i);
-		samplePoint = vec3(samplePoint.x, samplePoint.y, samplePoint.z);
-		vec4 texSample = textureLod(texUnit3D, (samplePoint + vec3(1,1,1)) / 2, mipLevel);	
+		vec3 samplePoint = (rayOrigin + rayDirection * rayStep * i) * sceneScale;
+		//samplePoint = vec3(samplePoint.x, samplePoint.y, samplePoint.z);
+		vec4 texSample = textureLod(texUnit3D, (samplePoint + vec3(1,1,1)) / 2 / sceneScale, mipLevel);	
 
 
 		if (texSample.a > 0)
