@@ -52,7 +52,7 @@ private:
 
 	void init3DTexture();
 
-	void createMaterialTweakbar(Material* m);
+	void createObjectTweakbar(MyObject3D* obj);
 
 	GLuint tex3D;
 
@@ -103,8 +103,8 @@ private:
 
 	glm::vec3 camera_pos; 
 	glm::vec3 camera_pos_goal; 
-	float xmouse;
-	float ymouse;
+	float xmouse = 0;
+	float ymouse = 0;
 
 	float delay_counter_;
 	int frame_counter_;

@@ -222,7 +222,7 @@ void AbstractCamera::render(glm::mat4 M, GLuint program_ID)
 {
   Object3D::render(M * transform_matrix_, program_ID);
 
-  glm::mat4 V = M * transform_matrix_;
+  glm::mat4 V = glm::inverse(M * transform_matrix_);
   
   glUseProgram(program_ID);
 
