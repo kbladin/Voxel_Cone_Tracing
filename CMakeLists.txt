@@ -42,10 +42,8 @@ include_directories(${ASSIMP_INCLUDE_DIRS})
 include_directories(${ANT_TWEAK_BAR_INCLUDE_PATH})
 
 # Our own include directory
-set(EXTERNAL_INCLUDES ${PROJECT_SOURCE_DIR}/external_libraries/common_includes)
 set(COMMON_INCLUDES ${PROJECT_SOURCE_DIR}/include)
 include_directories(${COMMON_INCLUDES})
-include_directories(${EXTERNAL_INCLUDES})
 
 
 SET(GCC_COVERAGE_COMPILE_FLAGS "-g -std=c++11")
@@ -57,13 +55,12 @@ SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}${GCC_COVERAGE_LINK_FLAGS}" )
 
 # Creating our own library
 file(GLOB Voxelization_lib_SOURCES ${PROJECT_SOURCE_DIR}/src/*.cpp)
-file(GLOB Voxelization_lib_EXTERNAL_SOURCES ${PROJECT_SOURCE_DIR}/external_libraries/common_src/*.cpp)
 file(GLOB Voxelization_lib_HEADERS ${PROJECT_SOURCE_DIR}/include/*.h)
 # We do not want main.cpp in the library
 file(GLOB to_remove ${PROJECT_SOURCE_DIR}/src/main.cpp)
 list(REMOVE_ITEM Voxelization_lib_SOURCES ${to_remove})
 list(REMOVE_ITEM Voxelization_lib_HEADERS ${to_remove})
-add_library(Voxelization_lib ${Voxelization_lib_SOURCES} ${Voxelization_lib_EXTERNAL_SOURCES} ${Voxelization_lib_HEADERS})
+add_library(Voxelization_lib ${Voxelization_lib_SOURCES} ${Voxelization_lib_HEADERS})
 
 # Creating our executable
 add_executable(Voxelization src/main.cpp)

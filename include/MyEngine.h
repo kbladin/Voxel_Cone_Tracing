@@ -52,12 +52,15 @@ private:
 
 	void init3DTexture();
 
-	void createObjectTweakbar(MyObject3D* obj);
+	static void createObjectTweakbar(MyObject3D* obj);
 
 	GLuint tex3D;
 
-	// Tweakable variables
 	static bool mouse_control_;
+	static float mouse_x_;
+	static float mouse_y_;
+
+	// Tweakable variables
 	float hej;
 
 	// Constants
@@ -72,7 +75,7 @@ private:
 	// Cameras
 	static Object3D* camera_;
 	OrthoCamera* voxelizer_camera_;
-	PerspectiveCamera* basic_cam_;
+	static PerspectiveCamera* basic_cam_;
 
 	// Objects
 	//Planet* planet_;

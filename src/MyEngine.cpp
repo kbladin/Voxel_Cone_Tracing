@@ -9,7 +9,10 @@
 #include <AntTweakBar.h>
 
 Object3D* MyEngine::camera_;
+PerspectiveCamera* MyEngine::basic_cam_;
 bool MyEngine::mouse_control_;
+float MyEngine::mouse_x_;
+float MyEngine::mouse_y_;
 
 MyEngine::MyEngine() : SimpleGraphicsEngine()
 {
@@ -145,7 +148,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   material_light.reflectance = 0;
   material_light.specular_reflectance = 0;
   material_light.specular_polish = 0;
-  material_light.radiosity = 10;
+  material_light.radiosity = 20;
 
   // Objects
   //planet_ = new Planet();
@@ -166,7 +169,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
 
   light_ = new LightSource();
 
-  createObjectTweakbar(bunny_);
+  //createObjectTweakbar(bunny_);
 
   floor_->addChild(floor_mesh_);
   floor_->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(2,2,2));
@@ -196,7 +199,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   bunny2_->transform_matrix_ = glm::translate(glm::vec3(1.0f,0.0f,0.0f)) * bunny2_->transform_matrix_;
 
   light_object_->addChild(icosphere_);
-  light_object_->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(0.3,0.3,0.3));
+  light_object_->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(0.7,0.7,0.7));
   light_object_->transform_matrix_ = glm::translate(glm::vec3(0.0,1.0f,0.0)) * light_object_->transform_matrix_;
 
   scene_->addChild(floor_);
@@ -500,7 +503,8 @@ void MyEngine::mousePosCallback(GLFWwindow * window, double x, double y)
 {
   if (!TwEventMousePosGLFW(x,y))
   {
-    /* code */
+    mouse_x_ = x;
+    mouse_y_ = y;
   }
 }
 
@@ -508,7 +512,43 @@ void MyEngine::mouseButtonCallback(GLFWwindow * window, int button, int action, 
 {
   if (!TwEventMouseButtonGLFW(button, action))
   {
-    /* code */
+    int w, h;
+    glfwGetWindowSize(window_, &w, &h);
+    glm::mat4 V = glm::inverse(camera_->transform_matrix_);
+    float aspect = float(w) / h;
+    glm::mat4 P = basic_cam_->projection_transform_matrix_;
+    glm::vec3 from =
+      glm::unProject(
+        glm::vec3(mouse_x_, mouse_y_, 0.0f),
+        V,
+        P,
+        glm::vec4(0, 0, w, h));
+    glm::vec3 to =
+      glm::unProject(
+        glm::vec3(mouse_x_, mouse_y_, 1.0f),
+        V,
+        P,
+        glm::vec4(0, 0, w, h));
+    glm::vec3 direction = glm::normalize(to - from);
+    
+    float min_t = 10000000;
+    MyObject3D* selected_obj = nullptr;
+    for (int i = 0; i < scene_->children.size(); ++i)
+    {
+      float t;
+      if (scene_->children[i]->intersects(from, direction, &t) && t < min_t)  {
+        MyObject3D* tmp_ptr = dynamic_cast<MyObject3D*>(scene_->children[i]);
+        if (tmp_ptr)
+        {
+          selected_obj = tmp_ptr;
+          min_t = t;
+        }
+      }
+    }
+    if (selected_obj)
+    {
+      createObjectTweakbar(selected_obj);
+    }
   }
 }
 
@@ -608,7 +648,6 @@ void MyEngine::updateCameraController()
     bunny_->transform_matrix_ = bunny_->transform_matrix_ * glm::translate(glm::vec3(0,0.1,0));
     //bunny2_->transform_matrix_ = bunny2_->transform_matrix_ * glm::translate(glm::vec3(0,0.1,0));
   }
-
 }
 
 MyObject3D::MyObject3D(Material material)

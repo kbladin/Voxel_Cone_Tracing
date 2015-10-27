@@ -40,10 +40,32 @@ namespace SGE {
     void removeChild(Object3D* child);
     virtual void render(glm::mat4 M, GLuint program_ID);
 
+    bool intersects(glm::vec3 point);
+    bool intersects(glm::vec3 origin, glm::vec3 direction, float* t);
+
     glm::mat4 transform_matrix_;
+
+    std::vector<Object3D*> children;
   protected:
   private:
-    std::vector<Object3D*> children;
+  };
+
+  class AbstractMesh;
+
+  //! An axis aligned bounding box.
+  class BoundingBox : public Object3D{
+  public:
+    BoundingBox(const AbstractMesh* template_mesh);
+    BoundingBox(const Object3D);
+    BoundingBox();
+    ~BoundingBox();
+    glm::vec3 getMin(){return min;}
+    glm::vec3 getMax(){return max;}
+    bool intersects(glm::vec3 point);
+    bool intersects(glm::vec3 origin, glm::vec3 direction, float* t);
+  private:
+    glm::vec3 max;
+    glm::vec3 min;
   };
 
   //! AbstractMesh
@@ -52,11 +74,15 @@ namespace SGE {
     AbstractMesh();
     ~AbstractMesh();
     virtual void render(glm::mat4 M, GLuint program_ID) = 0;
+    bool intersects(glm::vec3 point);
+    bool intersects(glm::vec3 origin, glm::vec3 direction, float* t);
+
+    std::vector<glm::vec3> vertices_;
   protected:
     virtual void initialize() = 0;
-    
-    std::vector<glm::vec3> vertices_;
 
+    BoundingBox aabb_;
+    
     GLuint vertex_array_ID_;
     GLuint vertex_buffer_;
   private:
@@ -84,9 +110,8 @@ namespace SGE {
   public:
     AbstractCamera();
     virtual void render(glm::mat4 M, GLuint program_ID) = 0;
-  protected:  
     glm::mat4 projection_transform_matrix_;
-
+  protected:  
   };
   //! PerspectiveCamera
   class PerspectiveCamera : public AbstractCamera {
@@ -144,7 +169,7 @@ namespace SGE {
     
     double dt_;
     
-    Object3D* scene_;
+    static Object3D* scene_;
     //Object3D* view_space_;
     //Object3D* background_space_;
     //static Object3D* camera_;

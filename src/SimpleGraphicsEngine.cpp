@@ -86,6 +86,33 @@ void Object3D::render(glm::mat4 M, GLuint program_ID)
   }
 }
 
+bool Object3D::intersects(glm::vec3 point)
+{
+  for (int i = 0; i < this->children.size(); ++i)
+  {
+    if (AbstractMesh* a = dynamic_cast<AbstractMesh*>(this->children[i]))  {
+      return a->intersects(point);
+    }
+  }
+}
+
+bool Object3D::intersects(glm::vec3 origin, glm::vec3 direction, float* t)
+{
+  float t_min = 10000000;
+  bool intersected = false;
+  for (int i = 0; i < this->children.size(); ++i)
+  {
+    float curr_t;
+    AbstractMesh* a = dynamic_cast<AbstractMesh*>(this->children[i]);
+    if (a && a->intersects(origin, direction, &curr_t) && curr_t < t_min)  {
+      intersected = true;
+      t_min = curr_t;
+    }
+  }
+  *t = t_min;
+  return intersected;
+}
+
 AbstractMesh::AbstractMesh()
 {
 }
@@ -105,6 +132,16 @@ void AbstractMesh::initialize()
   glGenBuffers(1, &vertex_buffer_);
   glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_);
   glBufferData(GL_ARRAY_BUFFER, vertices_.size() * sizeof(glm::vec3), &vertices_[0], GL_STATIC_DRAW);
+}
+
+bool AbstractMesh::intersects(glm::vec3 point)
+{
+  return aabb_.intersects(point);
+}
+
+bool AbstractMesh::intersects(glm::vec3 origin, glm::vec3 direction, float* t)
+{
+  return aabb_.intersects(origin, direction, t);
 }
 
 TriangleMesh::TriangleMesh() : AbstractMesh()
@@ -147,6 +184,8 @@ TriangleMesh::~TriangleMesh()
 void TriangleMesh::initialize()
 {
   AbstractMesh::initialize();
+
+  aabb_ = BoundingBox(this);
   
   glGenBuffers(1, &normal_buffer_);
   glBindBuffer(GL_ARRAY_BUFFER, normal_buffer_);
@@ -208,6 +247,95 @@ void TriangleMesh::render(glm::mat4 M, GLuint program_ID)
   
   glDisableVertexAttribArray(0);
   glDisableVertexAttribArray(1);
+}
+
+BoundingBox::BoundingBox(const AbstractMesh* template_mesh)
+{
+  float max_x = template_mesh->vertices_[0].x;
+  float max_y = template_mesh->vertices_[0].y;
+  float max_z = template_mesh->vertices_[0].z;
+  
+  float min_x = template_mesh->vertices_[0].x;
+  float min_y = template_mesh->vertices_[0].y;
+  float min_z = template_mesh->vertices_[0].z;
+  for (int i = 1; i < template_mesh->vertices_.size(); i++)
+  {
+    max_x = glm::max(max_x, template_mesh->vertices_[i].x);
+    max_y = glm::max(max_y, template_mesh->vertices_[i].y);
+    max_z = glm::max(max_z, template_mesh->vertices_[i].z);
+
+    min_x = glm::min(min_x, template_mesh->vertices_[i].x);
+    min_y = glm::min(min_y, template_mesh->vertices_[i].y);
+    min_z = glm::min(min_z, template_mesh->vertices_[i].z);
+  }
+  max = glm::vec3(max_x, max_y, max_z);
+  min = glm::vec3(min_x, min_y, min_z);
+}
+
+BoundingBox::BoundingBox(const Object3D)
+{
+  
+}
+
+BoundingBox::BoundingBox()
+{
+  min = glm::vec3(0,0,0);
+  max = glm::vec3(0,0,0);
+}
+
+BoundingBox::~BoundingBox()
+{
+  
+}
+
+bool BoundingBox::intersects(glm::vec3 point)
+{
+  return (point.x > min.x &&
+          point.y > min.y &&
+          point.z > min.z &&
+          point.x < max.x &&
+          point.y < max.y &&
+          point.z < max.z);
+}
+
+bool BoundingBox::intersects(glm::vec3 origin, glm::vec3 direction, float* t)
+{
+  // r.dir is unit direction vector of ray
+  glm::vec3 dirfrac(1.0f / direction.x, 1.0f / direction.y, 1.0f / direction.z);
+  // lb is the corner of AABB with minimal coordinates - left bottom, 
+  // rt is maximal corner
+  // r.org is the origin of ray
+  float t1 = (min.x - origin.x)*dirfrac.x;
+  float t2 = (max.x - origin.x)*dirfrac.x;
+  float t3 = (min.y - origin.y)*dirfrac.y;
+  float t4 = (max.y - origin.y)*dirfrac.y;
+  float t5 = (min.z - origin.z)*dirfrac.z;
+  float t6 = (max.z - origin.z)*dirfrac.z;
+
+  float tmin = glm::max(
+    glm::max(glm::min(t1, t2), glm::min(t3, t4)),
+    glm::min(t5, t6));
+  float tmax = glm::min(
+    glm::min(glm::max(t1, t2), glm::max(t3, t4)),
+    glm::max(t5, t6));
+
+  // if tmax < 0, ray (line) is intersecting AABB, but whole AABB is behing us
+  if (tmax < 0)
+  {
+      *t = tmax;
+      return false;
+  }
+
+  // if tmin > tmax, ray doesn't intersect AABB
+  if (tmin > tmax)
+  {
+      *t = tmax;
+      return false;
+  }
+
+  *t = tmin;
+  return true;
+  return false;
 }
 
 AbstractCamera::AbstractCamera()
@@ -314,7 +442,7 @@ void OrthoCamera::render(
 
 LightSource::LightSource()
 {
-  intensity = 0.7f;
+  intensity = 0.3f;
   color = glm::vec3(1.0, 1.0, 1.0);
   position = glm::vec3(0.0, 1.0, 0.0);
 }
@@ -336,6 +464,7 @@ void LightSource::render(glm::mat4 M, GLuint program_ID)
 //Object3D* SimpleGraphicsEngine::viewspace_ortho_camera_;
 
 GLFWwindow* SimpleGraphicsEngine::window_;
+Object3D* SimpleGraphicsEngine::scene_;
 
 SimpleGraphicsEngine::SimpleGraphicsEngine()
 {
