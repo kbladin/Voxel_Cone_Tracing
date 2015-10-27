@@ -57,7 +57,7 @@ vec3 coneTrace(vec3 rayDirection, float coneAngle, float multiSample, int steps)
 	float voxelSize = float(1) / textureSize * 2;
 
 	vec3 rayOrigin = vertexPosition_worldspace + voxelSize * M_SQRT3 * normalize(normal_worldspace);
-	float sampleStep = voxelSize;
+	float sampleStep = 0.01;
 	float t = sampleStep;
 	for (int i=0; i<steps; i++)
 	{
@@ -88,7 +88,7 @@ vec3 coneTrace(vec3 rayDirection, float coneAngle, float multiSample, int steps)
 		{
 			break;
 		}
-		vec4 texSample = textureLod(texUnit3D, (samplePoint + vec3(1,1,1)) / 2, mipLevel);
+		vec4 texSample = textureLod(texUnit3D, (samplePoint + vec3(1,1,1)) / 2, mipLevel) * sampleStep * 100;
 		
 		/*
 		if (texSample.a > 0)
@@ -112,8 +112,9 @@ vec3 coneTrace(vec3 rayDirection, float coneAngle, float multiSample, int steps)
 			res.rgb = res.rgb + (1 - res.a) * texSample.a * texSample.rgb;
 	        res.a   = res.a   + (1 - res.a) * texSample.a;
 		}
-		if (res.a > 0.8)
+		if (res.a > 0.99)
 			break;
+
 			
 		/*
 		res += texSample;

@@ -133,7 +133,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
 
   Material material3;
   material3.color_diffuse = glm::vec3(1,1,1);
-  material3.color_specular = glm::vec3(1,1,0.5);
+  material3.color_specular = glm::vec3(1,1,1);
   material3.reflectance = 1.0;
   material3.specular_reflectance = 0.0;
   material3.specular_polish = 0.99;
@@ -546,7 +546,7 @@ void MyEngine::createMaterialTweakbar(Material* m)
   TwAddVarRW(myBar, "reflectance", TW_TYPE_FLOAT, &m->reflectance, " min=0 max=1 step=0.01 label='reflectance' ");
   TwAddVarRW(myBar, "specularReflectance", TW_TYPE_FLOAT, &m->specular_reflectance, " min=0 max=1 step=0.01 label='Specular reflectance' ");
   TwAddVarRW(myBar, "specularPolish", TW_TYPE_FLOAT, &m->specular_polish, " min=0 max=1 step=0.01 label='Specular polish' ");
-  TwAddVarRW(myBar, "radiosity", TW_TYPE_FLOAT, &m->radiosity, " min=0 max=2 step=0.01 label='Radiosity' ");
+  TwAddVarRW(myBar, "radiosity", TW_TYPE_FLOAT, &m->radiosity, " min=0 max=10 step=0.01 label='Radiosity' ");
 }
 
 void MyEngine::updateCameraController()

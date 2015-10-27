@@ -59,7 +59,7 @@ private:
 	// Tweakable variables
 	static bool mouse_control_;
 	float hej;
-	int tex_size = 64;
+	int tex_size = 128;
 
 
 	// FBO
