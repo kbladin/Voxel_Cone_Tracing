@@ -90,7 +90,7 @@ vec3 coneTrace(vec3 rayDirection, float coneAngle, float multiSample, int steps)
 		{
 			break;
 		}
-		vec4 texSample = textureLod(texUnit3D, (samplePoint + vec3(1,1,1)) / 2 / sceneScale, mipLevel) * sampleStep * 100;
+		vec4 texSample = textureLod(texUnit3D, (samplePoint / sceneScale + vec3(1,1,1)) / 2, mipLevel) * sampleStep * 100;
 		
 		/*
 		if (texSample.a > 0)
@@ -153,7 +153,7 @@ vec3 calculateGlobalDiffuse(vec3 n_worldspace)
    	float coneAngle = M_PI / 4;
 
    	// Pick a random vector helper
-   	vec3 helper = normalize(vec3(1,0,0));
+   	vec3 helper = normalize(vec3(random(int(vertexPosition_worldspace.x * 5226)),random(int(vertexPosition_worldspace.y * 5226)),random(int(vertexPosition_worldspace.z * 5226))));
    	if (abs(dot(n,helper)) == 1)
    		// Pick a new helper
    		helper = vec3(0,1,0);
@@ -258,13 +258,13 @@ void main(){
 	{
 		// Add diffuse
 		//color.rgb = calculateLocalDiffuse() * material.color_diffuse * material.reflectance * (1 - material.specular_reflectance);
-		color.rgb += 0.5 * calculateGlobalDiffuse(normalize(normal_worldspace)) * material.color_diffuse * material.reflectance * (1 - material.specular_reflectance);
+		color.rgb += 0.2 * calculateGlobalDiffuse(normalize(normal_worldspace)) * material.color_diffuse * material.reflectance * (1 - material.specular_reflectance);
 		color.rgb += 0.5 * calculateGlobalDirectDiffuse() * material.color_diffuse * material.reflectance * (1 - material.specular_reflectance);
 	}
 	// Add specular
 	if (material.reflectance != 0 && material.specular_reflectance != 0)
 	{
-		color.rgb += calculateGlobalSpecular() * material.color_specular * material.reflectance * material.specular_reflectance;
+		color.rgb += 0.2 * calculateGlobalSpecular() * material.color_specular * material.reflectance * material.specular_reflectance;
 		color.rgb += calculateLocalSpecular() * material.color_specular * material.reflectance * material.specular_reflectance;
 	}
 	color.rgb += material.radiosity * material.color_diffuse;

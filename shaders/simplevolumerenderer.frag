@@ -28,7 +28,7 @@ void main(){
 	for (int i=0; i<nSteps; i++)
 	{
 		float mipLevel = 0;
-		vec3 samplePoint = (rayOrigin + rayDirection * rayStep * i) * sceneScale;
+		vec3 samplePoint = (rayOrigin + rayDirection * rayStep * i);
 		//samplePoint = vec3(samplePoint.x, samplePoint.y, samplePoint.z);
 		vec4 texSample = textureLod(texUnit3D, (samplePoint + vec3(1,1,1)) / 2 / sceneScale, mipLevel);	
 

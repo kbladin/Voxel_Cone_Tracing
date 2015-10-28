@@ -88,7 +88,7 @@ void imageAtomicRGBA8Avg( layout ( r32ui ) coherent volatile uimage3D imgUI , iv
 
 void main() {
     ivec3 size = imageSize(voxelImage);
-	ivec3 texCoord = ivec3((vertexPosition_worldspace_f + vec3(1)) / 2 * size);
+	ivec3 texCoord = ivec3((vertexPosition_worldspace_f / sceneScale  + vec3(1)) / 2 * size);
 
 	vec3 color;
 	if (material.reflectance != 0 && (1 - material.specular_reflectance) != 0)
@@ -97,6 +97,6 @@ void main() {
 	}
 	color += material.radiosity * material.color_diffuse;
 
-    imageStore(voxelImage, ivec3(texCoord / sceneScale), vec4(color, 1.0f));
+    imageStore(voxelImage, ivec3(texCoord), vec4(color, 1.0f));
     //imageAtomicRGBA8Avg(voxelImage, texCoord, vec4(color, 1.0f));
 }

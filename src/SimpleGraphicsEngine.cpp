@@ -469,18 +469,17 @@ LightSource::LightSource()
 {
   intensity = 1;
   color = glm::vec3(1.0, 1.0, 1.0);
-  position = glm::vec3(0.0, 0.8, 0.0);
 }
 
 void LightSource::render(glm::mat4 M, GLuint program_ID)
 {
   Object3D::render(M * transform_matrix_, program_ID);
   
-  glm::vec4 total_position = M * transform_matrix_ * glm::vec4(position.x, position.y, position.z, 1.0f);
+  glm::vec4 global_position = M * getTotalTransform() * glm::vec4(0, 0, 0, 1.0f);
   
   glUseProgram(program_ID);
   
-  glUniform3f(glGetUniformLocation(program_ID, "light.position"),total_position.x,total_position.y, total_position.z);
+  glUniform3f(glGetUniformLocation(program_ID, "light.position"),global_position.x,global_position.y, global_position.z);
   glUniform1f(glGetUniformLocation(program_ID, "light.intensity"), intensity);
   glUniform3f(glGetUniformLocation(program_ID, "light.color"), color.r, color.g, color.b);
 }

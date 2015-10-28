@@ -109,7 +109,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   material1.color_specular = glm::vec3(1,1,1);
   material1.reflectance = 1;
   material1.specular_reflectance = 0.0;
-  material1.specular_polish = 0.9;
+  material1.specular_polish = 0;
   material1.radiosity = 0.0;
 
   Material red;
@@ -117,7 +117,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   red.color_specular = glm::vec3(1,1,1);
   red.reflectance = 1.0;
   red.specular_reflectance = 0.0;
-  red.specular_polish = 0.9;
+  red.specular_polish = 0;
   red.radiosity = 0.0;
 
   Material green;
@@ -125,7 +125,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   green.color_specular = glm::vec3(1,1,1);
   green.reflectance = 1.0;
   green.specular_reflectance = 0.0;
-  green.specular_polish = 0.9;
+  green.specular_polish = 0;
   green.radiosity = 0.0;
 
   Material material2;
@@ -133,7 +133,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   material2.color_specular = glm::vec3(0.8,0.8,1);
   material2.reflectance = 1.0;
   material2.specular_reflectance = 0.0;
-  material2.specular_polish = 0.9;
+  material2.specular_polish = 0;
   material2.radiosity = 0.0;
 
   Material material3;
@@ -141,7 +141,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   material3.color_specular = glm::vec3(1,1,1);
   material3.reflectance = 1.0;
   material3.specular_reflectance = 0.0;
-  material3.specular_polish = 0.99;
+  material3.specular_polish = 0;
   material3.radiosity = 0.0;
 
   Material material_light; 
@@ -201,6 +201,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   bunny2_->transform_matrix_ = glm::translate(glm::vec3(1.0f,0.0f,0.0f)) * bunny2_->transform_matrix_;
 
   light_object_->addChild(icosphere_);
+  light_object_->addChild(light_);
   light_object_->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(0.1,0.1,0.1));
   light_object_->transform_matrix_ = glm::translate(glm::vec3(0.0,0.8f,0.0)) * light_object_->transform_matrix_;
 
@@ -212,7 +213,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
 
   scene_->addChild(bunny_);
   //scene_->addChild(bunny2_);
-  scene_->addChild(light_);
+  //scene_->addChild(light_);
   scene_->addChild(light_object_);
 
   // Set callback functions
@@ -268,7 +269,7 @@ void MyEngine::update()
 
   SimpleGraphicsEngine::update();
 
-  updateCameraController();
+  updateCameraController(dt_);
 
   frame_counter_++;
   delay_counter_ += dt_;
@@ -315,9 +316,9 @@ void MyEngine::render()
   SimpleGraphicsEngine::render();
   
   voxelizeScene();
-  //renderVolume();
   renderGlobal();
   //renderLocalDiffuse();
+  //renderVolume();
 
   int w, h;
   glfwGetWindowSize(window_, &w, &h);
@@ -486,7 +487,7 @@ void MyEngine::renderLocalDiffuse()
   glViewport(0, 0, w, h);
 
 
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glEnable(GL_DEPTH_TEST);
   glCullFace(GL_BACK);
   glEnable(GL_CULL_FACE);
@@ -602,17 +603,17 @@ void MyEngine::createObjectTweakbar(MyObject3D* obj)
   TwAddVarRW(tweakbar_, "radiosity", TW_TYPE_FLOAT, &obj->getMaterialPointer()->radiosity, " group=material min=0 max=10 step=0.01 label='Radiosity' ");
 }
 
-void MyEngine::updateCameraController()
+void MyEngine::updateCameraController(float dt)
 {
   glm::vec3 camera_pos_diff;
   if (glfwGetKey(window_, GLFW_KEY_D) == GLFW_PRESS)
-    camera_pos_diff.x = 0.1;
+    camera_pos_diff.x = 5 * dt;
   if (glfwGetKey(window_, GLFW_KEY_A) == GLFW_PRESS)
-    camera_pos_diff.x = -0.1;
+    camera_pos_diff.x = -5 * dt;
   if (glfwGetKey(window_, GLFW_KEY_S) == GLFW_PRESS)
-    camera_pos_diff.z = 0.1;
+    camera_pos_diff.z = 5 * dt;
   if (glfwGetKey(window_, GLFW_KEY_W) == GLFW_PRESS)
-    camera_pos_diff.z = -0.1;
+    camera_pos_diff.z = -5 * dt;
 
 
   double xmouse_current, ymouse_current;
@@ -648,19 +649,19 @@ void MyEngine::updateCameraController()
   {
     if (glfwGetKey(window_, GLFW_KEY_DOWN) == GLFW_PRESS)
     {
-      selected_obj_->transform_matrix_ = selected_obj_->transform_matrix_ * camera_->transform_matrix_ * glm::translate(glm::vec3(0,-0.1,0)) * glm::inverse(camera_->transform_matrix_);
+      selected_obj_->transform_matrix_ =  camera_->transform_matrix_ * glm::translate(dt * glm::vec3(0,-1,0)) * glm::inverse(camera_->transform_matrix_) * selected_obj_->transform_matrix_;
     }
     if (glfwGetKey(window_, GLFW_KEY_UP) == GLFW_PRESS)
     {
-      selected_obj_->transform_matrix_ = selected_obj_->transform_matrix_ * camera_->transform_matrix_ * glm::translate(glm::vec3(0,0.1,0)) * glm::inverse(camera_->transform_matrix_);
+      selected_obj_->transform_matrix_ =  camera_->transform_matrix_ * glm::translate(dt * glm::vec3(0,1,0)) * glm::inverse(camera_->transform_matrix_) * selected_obj_->transform_matrix_;
     }
     if (glfwGetKey(window_, GLFW_KEY_LEFT) == GLFW_PRESS)
     {
-      selected_obj_->transform_matrix_ = selected_obj_->transform_matrix_ * camera_->transform_matrix_ * glm::translate(glm::vec3(-0.1,0,0)) * glm::inverse(camera_->transform_matrix_);
+      selected_obj_->transform_matrix_ =  camera_->transform_matrix_ * glm::translate(dt * glm::vec3(-1,0,0)) * glm::inverse(camera_->transform_matrix_) * selected_obj_->transform_matrix_;
     }
     if (glfwGetKey(window_, GLFW_KEY_RIGHT) == GLFW_PRESS)
     {
-      selected_obj_->transform_matrix_ = selected_obj_->transform_matrix_ * camera_->transform_matrix_ * glm::translate(glm::vec3(0.1,0,0)) * glm::inverse(camera_->transform_matrix_);
+      selected_obj_->transform_matrix_ =  camera_->transform_matrix_ * glm::translate(dt * glm::vec3(1,0,0)) * glm::inverse(camera_->transform_matrix_) * selected_obj_->transform_matrix_;
     }
   }
 }

@@ -41,7 +41,7 @@ public:
 		int scancode,
 		int action,
 		int mods);
-	void updateCameraController();
+	void updateCameraController(float dt);
 	template <class T>
 	void Delay(T* input, T end_val, float speed);
 private:
@@ -68,8 +68,8 @@ private:
 	float hej;
 
 	// Constants
-	int tex_size = 64;
-	float scene_scale = 1;
+	int tex_size = 128;
+	float scene_scale = 2;
 
 
 	// FBO
