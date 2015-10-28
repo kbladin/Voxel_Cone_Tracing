@@ -150,7 +150,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   material_light.reflectance = 0;
   material_light.specular_reflectance = 0;
   material_light.specular_cone_angle = 1.57;
-  material_light.radiosity = 1.5;
+  material_light.radiosity = 0.2 * 3;
 
   // Objects
   //planet_ = new Planet();
@@ -159,14 +159,15 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   icosphere_ = new TriangleMesh("../data/meshes/icosphere.obj");
   floor_mesh_ = new TriangleMesh("../data/meshes/floor.obj");
   bunny_mesh_ = new TriangleMesh("../data/meshes/bunny.obj");
+  monkey_mesh_ = new TriangleMesh("../data/meshes/suzanne.obj");
 
   floor_ = new MyObject3D(material1);
   roof_ = new MyObject3D(material1);
   l_wall_ = new MyObject3D(red);
   r_wall_ = new MyObject3D(green);
   b_wall_ = new MyObject3D(material3);
-  bunny_ = new MyObject3D(material2);
-  bunny2_ = new MyObject3D(material3);
+  bunny_ = new MyObject3D(material3);
+  monkey_ = new MyObject3D(material3);
   light_object_ = new LightObject3D(icosphere_, material_light);
 
   //light_ = new LightSource();
@@ -193,37 +194,27 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   b_wall_->transform_matrix_ = glm::translate(glm::vec3(0.0f,0.0f,-1.0f)) * b_wall_->transform_matrix_;
 
   bunny_->addChild(bunny_mesh_);
-  bunny_->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(0.3,0.3,0.3));
+  bunny_->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(0.2,0.2,0.2));
   bunny_->transform_matrix_ = glm::translate(glm::vec3(-0.0f,0.0f,0.0f)) * bunny_->transform_matrix_;
 
-  bunny2_->addChild(bunny_mesh_);
-  bunny2_->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(0.3,0.3,0.3));
-  bunny2_->transform_matrix_ = glm::translate(glm::vec3(1.0f,0.0f,0.0f)) * bunny2_->transform_matrix_;
+  monkey_->addChild(monkey_mesh_);
+  monkey_->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(0.2,0.2,0.2));
+  monkey_->transform_matrix_ = glm::translate(glm::vec3(1.0f,0.0f,0.0f)) * monkey_->transform_matrix_;
 
-  //light_object_->addChild(light_);
   light_object_->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(0.1,0.1,0.1));
   light_object_->transform_matrix_ = glm::translate(glm::vec3(0.0,0.8f,0.0)) * light_object_->transform_matrix_;
 
   scene_->addChild(floor_);
-  //scene_->addChild(roof_);
+  scene_->addChild(roof_);
   scene_->addChild(l_wall_);
   scene_->addChild(r_wall_);
   scene_->addChild(b_wall_);
 
   scene_->addChild(bunny_);
-  //scene_->addChild(bunny2_);
-  //scene_->addChild(light_);
+  scene_->addChild(monkey_);
   scene_->addChild(light_object_);
 
   // Set callback functions
-  /*
-  glfwSetMouseButtonCallback(window_, (GLFWmousebuttonfun) TwEventMouseButtonGLFW);
-  glfwSetCursorPosCallback(window_, (GLFWcursorposfun) TwEventMousePosGLFW);
-  glfwSetScrollCallback(window_, (GLFWscrollfun) TwEventMouseWheelGLFW);
-  glfwSetKeyCallback(window_, (GLFWkeyfun) TwEventKeyGLFW);
-  glfwSetCharCallback(window_, (GLFWcharfun) TwEventCharGLFW);
-*/
-
   glfwSetCursorPosCallback(window_, mousePosCallback);
   glfwSetMouseButtonCallback(window_, mouseButtonCallback);
   glfwSetScrollCallback(window_, mouseScrollCallback);
@@ -246,6 +237,7 @@ MyEngine::~MyEngine()
   delete icosphere_;
   delete floor_mesh_;
   delete bunny_mesh_;
+  delete monkey_mesh_;
 
   delete floor_;
   delete roof_;
@@ -253,10 +245,8 @@ MyEngine::~MyEngine()
   delete r_wall_;
   delete b_wall_;
   delete bunny_;
-  delete bunny2_;
+  delete monkey_;
   delete light_object_;
-
-  //delete light_;
 
   delete fbo1_;
   delete fbo2_;
@@ -606,13 +596,13 @@ void MyEngine::updateCameraController(float dt)
 {
   glm::vec3 camera_pos_diff;
   if (glfwGetKey(window_, GLFW_KEY_D) == GLFW_PRESS)
-    camera_pos_diff.x = 5 * dt;
+    camera_pos_diff.x = 2 * dt;
   if (glfwGetKey(window_, GLFW_KEY_A) == GLFW_PRESS)
-    camera_pos_diff.x = -5 * dt;
+    camera_pos_diff.x = -2 * dt;
   if (glfwGetKey(window_, GLFW_KEY_S) == GLFW_PRESS)
-    camera_pos_diff.z = 5 * dt;
+    camera_pos_diff.z = 2 * dt;
   if (glfwGetKey(window_, GLFW_KEY_W) == GLFW_PRESS)
-    camera_pos_diff.z = -5 * dt;
+    camera_pos_diff.z = -2 * dt;
 
 
   double xmouse_current, ymouse_current;
@@ -646,14 +636,28 @@ void MyEngine::updateCameraController(float dt)
 
   if (selected_obj_)
   {
-    if (glfwGetKey(window_, GLFW_KEY_DOWN) == GLFW_PRESS)
+    if (glfwGetKey(window_, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
     {
-      selected_obj_->transform_matrix_ =  camera_->transform_matrix_ * glm::translate(dt * glm::vec3(0,-1,0)) * glm::inverse(camera_->transform_matrix_) * selected_obj_->transform_matrix_;
-    }
-    if (glfwGetKey(window_, GLFW_KEY_UP) == GLFW_PRESS)
+      if (glfwGetKey(window_, GLFW_KEY_DOWN) == GLFW_PRESS)
+      {
+        selected_obj_->transform_matrix_ =  camera_->transform_matrix_ * glm::translate(dt * glm::vec3(0,0,1)) * glm::inverse(camera_->transform_matrix_) * selected_obj_->transform_matrix_;
+      }
+      if (glfwGetKey(window_, GLFW_KEY_UP) == GLFW_PRESS)
+      {
+        selected_obj_->transform_matrix_ =  camera_->transform_matrix_ * glm::translate(dt * glm::vec3(0,0,-1)) * glm::inverse(camera_->transform_matrix_) * selected_obj_->transform_matrix_;
+      }
+    } else
     {
-      selected_obj_->transform_matrix_ =  camera_->transform_matrix_ * glm::translate(dt * glm::vec3(0,1,0)) * glm::inverse(camera_->transform_matrix_) * selected_obj_->transform_matrix_;
+      if (glfwGetKey(window_, GLFW_KEY_DOWN) == GLFW_PRESS)
+      {
+        selected_obj_->transform_matrix_ =  camera_->transform_matrix_ * glm::translate(dt * glm::vec3(0,-1,0)) * glm::inverse(camera_->transform_matrix_) * selected_obj_->transform_matrix_;
+      }
+      if (glfwGetKey(window_, GLFW_KEY_UP) == GLFW_PRESS)
+      {
+        selected_obj_->transform_matrix_ =  camera_->transform_matrix_ * glm::translate(dt * glm::vec3(0,1,0)) * glm::inverse(camera_->transform_matrix_) * selected_obj_->transform_matrix_;
+      }
     }
+
     if (glfwGetKey(window_, GLFW_KEY_LEFT) == GLFW_PRESS)
     {
       selected_obj_->transform_matrix_ =  camera_->transform_matrix_ * glm::translate(dt * glm::vec3(-1,0,0)) * glm::inverse(camera_->transform_matrix_) * selected_obj_->transform_matrix_;

@@ -2,7 +2,7 @@
 
 #define M_PI 3.14159
 #define M_SQRT3 1.732
-#define gammacorr(x) pow(x, 1/2.0)
+#define gammacorr(x) pow(x, 1/2.6)
 
 struct Material
 {
@@ -50,7 +50,7 @@ float random(float xx){
 }
 
 // Trace cone from position vertexPosition_worldspace and accumulate color
-vec3 coneTrace(vec3 rayDirection, float coneAngle, float multiSample, int steps)
+vec3 coneTrace(vec3 rayDirection, float coneAngle, float multiSample, int steps, bool lightTrace)
 {
 	//coneAngle = M_PI / 30;
 	vec4 res = vec4(0,0,0,0);
@@ -116,7 +116,9 @@ vec3 coneTrace(vec3 rayDirection, float coneAngle, float multiSample, int steps)
 	        res.a   = res.a   + (1 - res.a) * texSample.a;
 		}
 		if (res.a > 0.9)
+		{
 			break;
+		}
 
 			
 		/*
@@ -165,13 +167,13 @@ vec3 calculateGlobalDiffuse(vec3 n_worldspace)
    	
    	float multiSample = 4;
    	// First trace a cone in the normal direction
-   	res += coneTrace(rayDirection, coneAngle, multiSample, 200);
+   	res += coneTrace(rayDirection, coneAngle, multiSample, 200, false);
    	float inclination = M_PI / 4;
 
    	for (int i = 0; i < 5; ++i)
    	{
    		rayDirection = n * cos(inclination) + sin(inclination) * (cos( i * 2 * M_PI / 5) * t + sin(i * 2 * M_PI / 5) * bt);
-   		res += coneTrace(normalize(rayDirection), coneAngle, multiSample, 200);
+   		res += coneTrace(normalize(rayDirection), coneAngle, multiSample, 200, false);
    	}
 
    	return res / 6;
@@ -229,7 +231,7 @@ vec3 calculateGlobalSpecular()
 	vec3 v = normalize( vertexPosition_worldspace - eyePosition_worldspace );
 	vec3 r = reflect(v, normalize(normal_worldspace));
 	float cone_angle = material.specular_cone_angle;//atan((1 - material.specular_cone_angle) * M_PI / 2);
-	return coneTrace(r, cone_angle, 2, 200);
+	return coneTrace(r, cone_angle, 2, 200, false);
 }
 
 vec3 calculateGlobalDirectDiffuse()
@@ -243,11 +245,11 @@ vec3 calculateGlobalDirectDiffuse()
 	float cosTheta = dot(n,l);
 
 	vec3 diffuse =
-		coneTrace(l, cone_angle, 8, 200) *
+		coneTrace(l, cone_angle, 8, 200, true) *
 		max(cosTheta, 0) *
 		1 / pow(light_dist, 2);
 
-	return diffuse;
+	return diffuse / 3;
 }
 
 void main(){
@@ -257,13 +259,13 @@ void main(){
 	{
 		// Add diffuse
 		//color.rgb = calculateLocalDiffuse() * material.color_diffuse * material.reflectance * (1 - material.specular_reflectance);
-		color.rgb += 0.2 * calculateGlobalDiffuse(normalize(normal_worldspace)) * material.color_diffuse * material.reflectance * (1 - material.specular_reflectance);
-		color.rgb += 0.5 * calculateGlobalDirectDiffuse() * material.color_diffuse * material.reflectance * (1 - material.specular_reflectance);
+		color.rgb += calculateGlobalDiffuse(normalize(normal_worldspace)) * material.color_diffuse * material.reflectance * (1 - material.specular_reflectance);
+		color.rgb += calculateGlobalDirectDiffuse() * material.color_diffuse * material.reflectance * (1 - material.specular_reflectance);
 	}
 	// Add specular
 	if (material.reflectance != 0 && material.specular_reflectance != 0)
 	{
-		color.rgb += 0.2 * calculateGlobalSpecular() * material.color_specular * material.reflectance * material.specular_reflectance;
+		color.rgb += calculateGlobalSpecular() * material.color_specular * material.reflectance * material.specular_reflectance;
 		color.rgb += calculateLocalSpecular() * material.color_specular * material.reflectance * material.specular_reflectance;
 	}
 	color.rgb += material.radiosity * material.color_diffuse;

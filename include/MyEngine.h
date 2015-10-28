@@ -69,8 +69,8 @@ private:
 	float hej;
 
 	// Constants
-	int tex_size = 256;
-	float scene_scale = 2;
+	int tex_size = 128;
+	float scene_scale = 1;
 
 
 	// FBO
@@ -83,23 +83,21 @@ private:
 	static PerspectiveCamera* basic_cam_;
 
 	// Objects
-	//Planet* planet_;
 	Quad* quad_;
 	TriangleMesh* cube_;
 	TriangleMesh* icosphere_;
 	TriangleMesh* floor_mesh_;
 	TriangleMesh* bunny_mesh_;
+	TriangleMesh* monkey_mesh_;
 
 	MyObject3D* bunny_;
-	MyObject3D* bunny2_;
+	MyObject3D* monkey_;
 	MyObject3D* floor_;
 	MyObject3D* roof_;
 	MyObject3D* l_wall_;
 	MyObject3D* r_wall_;
 	MyObject3D* b_wall_;
 	LightObject3D* light_object_;
-
-	//LightSource* light_;
 
 	float roll_goal = 0;
 	float pitch_goal = 0;
