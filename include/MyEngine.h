@@ -2,6 +2,7 @@
 #define MY_ENGINE_H
 
 #include "SimpleGraphicsEngine.h"
+#include <AntTweakBar.h>
 
 using namespace SGE;
 
@@ -60,12 +61,14 @@ private:
 	static float mouse_x_;
 	static float mouse_y_;
 
+
+	static TwBar* tweakbar_;
 	// Tweakable variables
 	float hej;
 
 	// Constants
-	int tex_size = 128;
-	float scene_scale = 2;
+	int tex_size = 64;
+	float scene_scale = 1;
 
 
 	// FBO

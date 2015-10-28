@@ -67,6 +67,7 @@ GLuint ShaderManager::getShader(std::string name)
 void Object3D::addChild(Object3D *child)
 {
   children.push_back(child);
+  child->parent_ = this;
 }
 
 void Object3D::removeChild(Object3D *child)
@@ -111,6 +112,24 @@ bool Object3D::intersects(glm::vec3 origin, glm::vec3 direction, float* t)
   }
   *t = t_min;
   return intersected;
+}
+
+Object3D::Object3D()
+{
+  parent_ = nullptr;
+}
+
+glm::mat4 Object3D::getTotalTransform()
+{
+  // Base case:
+  if (!parent_)
+  {
+    return glm::mat4(1);
+  }
+  else
+  { // Recursion
+    return parent_->getTotalTransform() * transform_matrix_;
+  }
 }
 
 AbstractMesh::AbstractMesh()
@@ -186,6 +205,7 @@ void TriangleMesh::initialize()
   AbstractMesh::initialize();
 
   aabb_ = BoundingBox(this);
+  this->addChild(&aabb_);
   
   glGenBuffers(1, &normal_buffer_);
   glBindBuffer(GL_ARRAY_BUFFER, normal_buffer_);
@@ -290,27 +310,36 @@ BoundingBox::~BoundingBox()
 
 bool BoundingBox::intersects(glm::vec3 point)
 {
-  return (point.x > min.x &&
-          point.y > min.y &&
-          point.z > min.z &&
-          point.x < max.x &&
-          point.y < max.y &&
-          point.z < max.z);
+  // Transform to world coordinates
+  glm::vec3 min_world = min;// glm::vec3(getTotalTransform() * glm::vec4(min, 1));
+  glm::vec3 max_world = max;// glm::vec3(getTotalTransform() * glm::vec4(max, 1));
+  return (point.x > min_world.x &&
+          point.y > min_world.y &&
+          point.z > min_world.z &&
+          point.x < max_world.x &&
+          point.y < max_world.y &&
+          point.z < max_world.z);
 }
 
 bool BoundingBox::intersects(glm::vec3 origin, glm::vec3 direction, float* t)
 {
+  // Transform to world coordinates
+  origin = glm::vec3(glm::inverse(getTotalTransform()) * glm::vec4(origin, 1));
+  direction = glm::vec3(glm::inverse(getTotalTransform()) * glm::vec4(direction, 0));
+  glm::vec3 min_world = min;// glm::vec3(getTotalTransform() * glm::vec4(min, 1));
+  glm::vec3 max_world = max;// glm::vec3(getTotalTransform() * glm::vec4(max, 1));
+
   // r.dir is unit direction vector of ray
   glm::vec3 dirfrac(1.0f / direction.x, 1.0f / direction.y, 1.0f / direction.z);
   // lb is the corner of AABB with minimal coordinates - left bottom, 
   // rt is maximal corner
   // r.org is the origin of ray
-  float t1 = (min.x - origin.x)*dirfrac.x;
-  float t2 = (max.x - origin.x)*dirfrac.x;
-  float t3 = (min.y - origin.y)*dirfrac.y;
-  float t4 = (max.y - origin.y)*dirfrac.y;
-  float t5 = (min.z - origin.z)*dirfrac.z;
-  float t6 = (max.z - origin.z)*dirfrac.z;
+  float t1 = (min_world.x - origin.x)*dirfrac.x;
+  float t2 = (max_world.x - origin.x)*dirfrac.x;
+  float t3 = (min_world.y - origin.y)*dirfrac.y;
+  float t4 = (max_world.y - origin.y)*dirfrac.y;
+  float t5 = (min_world.z - origin.z)*dirfrac.z;
+  float t6 = (max_world.z - origin.z)*dirfrac.z;
 
   float tmin = glm::max(
     glm::max(glm::min(t1, t2), glm::min(t3, t4)),
@@ -442,7 +471,7 @@ void OrthoCamera::render(
 
 LightSource::LightSource()
 {
-  intensity = 0.3f;
+  intensity = 0.8f;
   color = glm::vec3(1.0, 1.0, 1.0);
   position = glm::vec3(0.0, 1.0, 0.0);
 }

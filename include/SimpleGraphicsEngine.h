@@ -34,7 +34,7 @@ namespace SGE {
   //! Object3D
   class Object3D {
   public:
-    Object3D() {};
+    Object3D();
     virtual ~Object3D() {};
     void addChild(Object3D* child);
     void removeChild(Object3D* child);
@@ -42,11 +42,13 @@ namespace SGE {
 
     bool intersects(glm::vec3 point);
     bool intersects(glm::vec3 origin, glm::vec3 direction, float* t);
+    glm::mat4 getTotalTransform();
 
     glm::mat4 transform_matrix_;
 
     std::vector<Object3D*> children;
   protected:
+    Object3D* parent_;
   private:
   };
 

@@ -13,6 +13,7 @@ PerspectiveCamera* MyEngine::basic_cam_;
 bool MyEngine::mouse_control_;
 float MyEngine::mouse_x_;
 float MyEngine::mouse_y_;
+TwBar* MyEngine::tweakbar_;
 
 MyEngine::MyEngine() : SimpleGraphicsEngine()
 {
@@ -174,7 +175,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   floor_->addChild(floor_mesh_);
   floor_->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(2,2,2));
   floor_->transform_matrix_ = glm::translate(glm::vec3(0.0f,-1.0f,0.0f)) * floor_->transform_matrix_;
-  /*
+  
   roof_->addChild(floor_mesh_);
   roof_->transform_matrix_ = glm::translate(glm::vec3(0.0f,1.0f,0.0f)) * roof_->transform_matrix_;
   
@@ -189,7 +190,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   b_wall_->addChild(floor_mesh_);
   b_wall_->transform_matrix_ = glm::rotate(float(M_PI / 2), glm::vec3(1.0f,0.0f,0.0f)) * b_wall_->transform_matrix_;
   b_wall_->transform_matrix_ = glm::translate(glm::vec3(0.0f,0.0f,-1.0f)) * b_wall_->transform_matrix_;
-*/
+
   bunny_->addChild(bunny_mesh_);
   bunny_->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(0.3,0.3,0.3));
   bunny_->transform_matrix_ = glm::translate(glm::vec3(-0.0f,0.0f,0.0f)) * bunny_->transform_matrix_;
@@ -199,7 +200,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   bunny2_->transform_matrix_ = glm::translate(glm::vec3(1.0f,0.0f,0.0f)) * bunny2_->transform_matrix_;
 
   light_object_->addChild(icosphere_);
-  light_object_->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(0.7,0.7,0.7));
+  light_object_->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(0.3,0.3,0.3));
   light_object_->transform_matrix_ = glm::translate(glm::vec3(0.0,1.0f,0.0)) * light_object_->transform_matrix_;
 
   scene_->addChild(floor_);
@@ -209,7 +210,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   scene_->addChild(b_wall_);
 
   scene_->addChild(bunny_);
-  scene_->addChild(bunny2_);
+  //scene_->addChild(bunny2_);
   scene_->addChild(light_);
   scene_->addChild(light_object_);
 
@@ -519,13 +520,13 @@ void MyEngine::mouseButtonCallback(GLFWwindow * window, int button, int action, 
     glm::mat4 P = basic_cam_->projection_transform_matrix_;
     glm::vec3 from =
       glm::unProject(
-        glm::vec3(mouse_x_, mouse_y_, 0.0f),
+        glm::vec3(mouse_x_, h - mouse_y_, 0.0f),
         V,
         P,
         glm::vec4(0, 0, w, h));
     glm::vec3 to =
       glm::unProject(
-        glm::vec3(mouse_x_, mouse_y_, 1.0f),
+        glm::vec3(mouse_x_, h - mouse_y_, 1.0f),
         V,
         P,
         glm::vec4(0, 0, w, h));
@@ -586,14 +587,17 @@ void MyEngine::keyCallback(
 
 void MyEngine::createObjectTweakbar(MyObject3D* obj)
 {
-  TwBar *myBar;
-  myBar = TwNewBar("NameOfMyTweakBar");
-  TwAddVarRW(myBar, "diffuseColor", TW_TYPE_COLOR3F, &obj->getMaterialPointer()->color_diffuse.r, " group=material label='Diffuse color' ");
-  TwAddVarRW(myBar, "specularColor", TW_TYPE_COLOR3F, &obj->getMaterialPointer()->color_specular.r, " group=material label='Specular color' ");
-  TwAddVarRW(myBar, "reflectance", TW_TYPE_FLOAT, &obj->getMaterialPointer()->reflectance, " group=material min=0 max=1 step=0.01 label='reflectance' ");
-  TwAddVarRW(myBar, "specularReflectance", TW_TYPE_FLOAT, &obj->getMaterialPointer()->specular_reflectance, " group=material min=0 max=1 step=0.01 label='Specular reflectance' ");
-  TwAddVarRW(myBar, "specularPolish", TW_TYPE_FLOAT, &obj->getMaterialPointer()->specular_polish, " group=material min=0 max=1 step=0.01 label='Specular polish' ");
-  TwAddVarRW(myBar, "radiosity", TW_TYPE_FLOAT, &obj->getMaterialPointer()->radiosity, " group=material min=0 max=10 step=0.01 label='Radiosity' ");
+  if (tweakbar_)
+  {
+    TwDeleteBar(tweakbar_);
+  }
+  tweakbar_ = TwNewBar("NameOfMyTweakBar");
+  TwAddVarRW(tweakbar_, "diffuseColor", TW_TYPE_COLOR3F, &obj->getMaterialPointer()->color_diffuse.r, " group=material label='Diffuse color' ");
+  TwAddVarRW(tweakbar_, "specularColor", TW_TYPE_COLOR3F, &obj->getMaterialPointer()->color_specular.r, " group=material label='Specular color' ");
+  TwAddVarRW(tweakbar_, "reflectance", TW_TYPE_FLOAT, &obj->getMaterialPointer()->reflectance, " group=material min=0 max=1 step=0.01 label='reflectance' ");
+  TwAddVarRW(tweakbar_, "specularReflectance", TW_TYPE_FLOAT, &obj->getMaterialPointer()->specular_reflectance, " group=material min=0 max=1 step=0.01 label='Specular reflectance' ");
+  TwAddVarRW(tweakbar_, "specularPolish", TW_TYPE_FLOAT, &obj->getMaterialPointer()->specular_polish, " group=material min=0 max=1 step=0.01 label='Specular polish' ");
+  TwAddVarRW(tweakbar_, "radiosity", TW_TYPE_FLOAT, &obj->getMaterialPointer()->radiosity, " group=material min=0 max=10 step=0.01 label='Radiosity' ");
 }
 
 void MyEngine::updateCameraController()
