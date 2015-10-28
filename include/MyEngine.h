@@ -9,6 +9,7 @@ using namespace SGE;
 class Planet;
 class Quad;
 class MyObject3D;
+class LightObject3D;
 
 struct Material
 {
@@ -16,7 +17,7 @@ struct Material
 	glm::vec3 color_specular;
 	float reflectance; // [0, 1]
 	float specular_reflectance; // [0, 1], part of reflectance
-	float specular_polish; // [0, 1]
+	float specular_cone_angle; // [0, 1]
 	float radiosity;
 };
 
@@ -68,7 +69,7 @@ private:
 	float hej;
 
 	// Constants
-	int tex_size = 128;
+	int tex_size = 256;
 	float scene_scale = 2;
 
 
@@ -96,9 +97,9 @@ private:
 	MyObject3D* l_wall_;
 	MyObject3D* r_wall_;
 	MyObject3D* b_wall_;
-	MyObject3D* light_object_;
+	LightObject3D* light_object_;
 
-	LightSource* light_;
+	//LightSource* light_;
 
 	float roll_goal = 0;
 	float pitch_goal = 0;
@@ -132,7 +133,7 @@ public:
 	~MyObject3D();
 	void render(glm::mat4 M, GLuint program_ID);
 	Material* getMaterialPointer(){return &material_;};
-private:
+protected:
 	Material material_;
 };
 
@@ -144,17 +145,11 @@ private:
 	TriangleMesh* mesh_;
 };
 
-class Planet : public Object3D {
+class LightObject3D : public MyObject3D {
 public:
-	Planet();
-	~Planet();
-private:
-	TriangleMesh* mesh_;
-	void buildIcosahedron(
-		float radius, // Kkm
-		std::vector<glm::vec3>* positions,
-		std::vector<glm::vec3>* normals,
-		std::vector<unsigned short>* elements);
+	LightObject3D(TriangleMesh* mesh, Material material);
+	~LightObject3D();
+	void render(glm::mat4 M, GLuint program_ID);
 };
 
 #endif

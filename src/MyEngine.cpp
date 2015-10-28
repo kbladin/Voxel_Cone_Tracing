@@ -109,7 +109,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   material1.color_specular = glm::vec3(1,1,1);
   material1.reflectance = 1;
   material1.specular_reflectance = 0.0;
-  material1.specular_polish = 0;
+  material1.specular_cone_angle = 1.57;
   material1.radiosity = 0.0;
 
   Material red;
@@ -117,7 +117,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   red.color_specular = glm::vec3(1,1,1);
   red.reflectance = 1.0;
   red.specular_reflectance = 0.0;
-  red.specular_polish = 0;
+  red.specular_cone_angle = 1.57;
   red.radiosity = 0.0;
 
   Material green;
@@ -125,7 +125,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   green.color_specular = glm::vec3(1,1,1);
   green.reflectance = 1.0;
   green.specular_reflectance = 0.0;
-  green.specular_polish = 0;
+  green.specular_cone_angle = 1.57;
   green.radiosity = 0.0;
 
   Material material2;
@@ -133,7 +133,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   material2.color_specular = glm::vec3(0.8,0.8,1);
   material2.reflectance = 1.0;
   material2.specular_reflectance = 0.0;
-  material2.specular_polish = 0;
+  material2.specular_cone_angle = 1.57;
   material2.radiosity = 0.0;
 
   Material material3;
@@ -141,7 +141,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   material3.color_specular = glm::vec3(1,1,1);
   material3.reflectance = 1.0;
   material3.specular_reflectance = 0.0;
-  material3.specular_polish = 0;
+  material3.specular_cone_angle = 1.57;
   material3.radiosity = 0.0;
 
   Material material_light; 
@@ -149,8 +149,8 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   material_light.color_specular = glm::vec3(0,0,0);
   material_light.reflectance = 0;
   material_light.specular_reflectance = 0;
-  material_light.specular_polish = 0;
-  material_light.radiosity = 0.5;
+  material_light.specular_cone_angle = 1.57;
+  material_light.radiosity = 1.5;
 
   // Objects
   //planet_ = new Planet();
@@ -167,9 +167,9 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   b_wall_ = new MyObject3D(material3);
   bunny_ = new MyObject3D(material2);
   bunny2_ = new MyObject3D(material3);
-  light_object_ = new MyObject3D(material_light);
+  light_object_ = new LightObject3D(icosphere_, material_light);
 
-  light_ = new LightSource();
+  //light_ = new LightSource();
 
   //createObjectTweakbar(bunny_);
 
@@ -200,8 +200,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   bunny2_->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(0.3,0.3,0.3));
   bunny2_->transform_matrix_ = glm::translate(glm::vec3(1.0f,0.0f,0.0f)) * bunny2_->transform_matrix_;
 
-  light_object_->addChild(icosphere_);
-  light_object_->addChild(light_);
+  //light_object_->addChild(light_);
   light_object_->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(0.1,0.1,0.1));
   light_object_->transform_matrix_ = glm::translate(glm::vec3(0.0,0.8f,0.0)) * light_object_->transform_matrix_;
 
@@ -257,7 +256,7 @@ MyEngine::~MyEngine()
   delete bunny2_;
   delete light_object_;
 
-  delete light_;
+  //delete light_;
 
   delete fbo1_;
   delete fbo2_;
@@ -599,7 +598,7 @@ void MyEngine::createObjectTweakbar(MyObject3D* obj)
   TwAddVarRW(tweakbar_, "specularColor", TW_TYPE_COLOR3F, &obj->getMaterialPointer()->color_specular.r, " group=material label='Specular color' ");
   TwAddVarRW(tweakbar_, "reflectance", TW_TYPE_FLOAT, &obj->getMaterialPointer()->reflectance, " group=material min=0 max=1 step=0.01 label='reflectance' ");
   TwAddVarRW(tweakbar_, "specularReflectance", TW_TYPE_FLOAT, &obj->getMaterialPointer()->specular_reflectance, " group=material min=0 max=1 step=0.01 label='Specular reflectance' ");
-  TwAddVarRW(tweakbar_, "specularPolish", TW_TYPE_FLOAT, &obj->getMaterialPointer()->specular_polish, " group=material min=0 max=1 step=0.01 label='Specular polish' ");
+  TwAddVarRW(tweakbar_, "specularPolish", TW_TYPE_FLOAT, &obj->getMaterialPointer()->specular_cone_angle, " group=material min=0 max=1.57 step=0.01 label='Specular cone angle' ");
   TwAddVarRW(tweakbar_, "radiosity", TW_TYPE_FLOAT, &obj->getMaterialPointer()->radiosity, " group=material min=0 max=10 step=0.01 label='Radiosity' ");
 }
 
@@ -663,6 +662,17 @@ void MyEngine::updateCameraController(float dt)
     {
       selected_obj_->transform_matrix_ =  camera_->transform_matrix_ * glm::translate(dt * glm::vec3(1,0,0)) * glm::inverse(camera_->transform_matrix_) * selected_obj_->transform_matrix_;
     }
+    if (LightObject3D* l = dynamic_cast<LightObject3D*>(selected_obj_))
+    {
+      if (glfwGetKey(window_, GLFW_KEY_P) == GLFW_PRESS)
+      {
+        selected_obj_->transform_matrix_ = selected_obj_->transform_matrix_ * glm::scale(glm::vec3(1.05,1.05,1.05));
+      }
+      if (glfwGetKey(window_, GLFW_KEY_L) == GLFW_PRESS)
+      {
+        selected_obj_->transform_matrix_ = selected_obj_->transform_matrix_ * glm::scale(glm::vec3(0.95,0.95,0.95));
+      }
+    }
   }
 }
 
@@ -682,7 +692,7 @@ void MyObject3D::render(glm::mat4 M, GLuint program_ID)
   glUniform3f(glGetUniformLocation(program_ID, "material.color_specular"), material_.color_specular.x, material_.color_specular.y, material_.color_specular.z);
   glUniform1f(glGetUniformLocation(program_ID, "material.reflectance"), material_.reflectance);
   glUniform1f(glGetUniformLocation(program_ID, "material.specular_reflectance"), material_.specular_reflectance);
-  glUniform1f(glGetUniformLocation(program_ID, "material.specular_polish"), material_.specular_polish);
+  glUniform1f(glGetUniformLocation(program_ID, "material.specular_cone_angle"), material_.specular_cone_angle);
   glUniform1f(glGetUniformLocation(program_ID, "material.radiosity"), material_.radiosity);
 
   Object3D::render(M, program_ID);
@@ -720,139 +730,30 @@ Quad::~Quad()
   delete mesh_;
 }
 
-Planet::Planet()
+LightObject3D::LightObject3D(TriangleMesh* mesh, Material material) :
+  MyObject3D(material)
 {
-  std::vector<glm::vec3> positions;
-  std::vector<glm::vec3> normals;
-  std::vector<unsigned short> elements;
-  
-  buildIcosahedron(0.7, &positions, &normals, &elements);
-
-  //mesh_ = new TriangleMesh("../data/meshes/bunny.obj");
-  //mesh_ = new TriangleMesh(positions, normals, elements);
-  this->addChild(mesh_);
-  this->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(0.3,0.3,0.3));
+  this->addChild(mesh);
 }
 
-Planet::~Planet()
+LightObject3D::~LightObject3D()
 {
-  delete mesh_;
+
 }
 
-void Planet::buildIcosahedron(
-  float radius,
-  std::vector<glm::vec3>* positions,
-  std::vector<glm::vec3>* normals,
-  std::vector<unsigned short>* elements)
-{
-  // create 12 vertices of a icosahedron
-  float t = (1.0 + sqrt(5.0)) / 2.0;
+void LightObject3D::render(glm::mat4 M, GLuint program_ID)
+{  
+  glm::vec4 position_worldspace = M * getTotalTransform() * glm::vec4(0, 0, 0, 1.0f);
+  float radius = glm::length(M * getTotalTransform() * glm::vec4(1, 0, 0, 0.0f));
 
-  positions->push_back(glm::normalize(glm::vec3(-1,  t,  0)) * radius);
-  positions->push_back(glm::normalize(glm::vec3( 1,  t,  0)) * radius);
-  positions->push_back(glm::normalize(glm::vec3(-1, -t,  0)) * radius);
-  positions->push_back(glm::normalize(glm::vec3( 1, -t,  0)) * radius);
+  glUseProgram(program_ID);
 
-  positions->push_back(glm::normalize(glm::vec3( 0, -1,  t)) * radius);
-  positions->push_back(glm::normalize(glm::vec3( 0,  1,  t)) * radius);
-  positions->push_back(glm::normalize(glm::vec3( 0, -1, -t)) * radius);
-  positions->push_back(glm::normalize(glm::vec3( 0,  1, -t)) * radius);
+  glUniform1f(glGetUniformLocation(program_ID, "light.intensity"), material_.radiosity);
+  glUniform1f(glGetUniformLocation(program_ID, "light.radius"), radius);  
+  glUniform3f(glGetUniformLocation(program_ID, "light.position"),position_worldspace.x,position_worldspace.y, position_worldspace.z);
+  glUniform3f(glGetUniformLocation(program_ID, "light.color"), material_.color_diffuse.r * material_.radiosity, material_.color_diffuse.g * material_.radiosity, material_.color_diffuse.b * material_.radiosity);
 
-  positions->push_back(glm::normalize(glm::vec3( t,  0, -1)) * radius);
-  positions->push_back(glm::normalize(glm::vec3( t,  0,  1)) * radius);
-  positions->push_back(glm::normalize(glm::vec3(-t,  0, -1)) * radius);
-  positions->push_back(glm::normalize(glm::vec3(-t,  0,  1)) * radius);
-
-  for (int i = 0; i < positions->size(); ++i)
-  {
-    normals->push_back((*positions)[i]);
-    (*normals)[i] = glm::normalize((*normals)[i]);
-  }
-
-  // create 20 triangles of the icosahedron
-  // 5 faces around point 0
-  elements->push_back(0);
-  elements->push_back(11);
-  elements->push_back(5);
-
-  elements->push_back(0);
-  elements->push_back(5);
-  elements->push_back(1);
-
-  elements->push_back(0);
-  elements->push_back(1);
-  elements->push_back(7);
-
-  elements->push_back(0);
-  elements->push_back(7);
-  elements->push_back(10);
-
-  elements->push_back(0);
-  elements->push_back(10);
-  elements->push_back(11);
-
-  // 5 adjacent faces
-  elements->push_back(1);
-  elements->push_back(5);
-  elements->push_back(9);
-
-  elements->push_back(5);
-  elements->push_back(11);
-  elements->push_back(4);
-
-  elements->push_back(11);
-  elements->push_back(10);
-  elements->push_back(2);
-
-  elements->push_back(10);
-  elements->push_back(7);
-  elements->push_back(6);
-
-  elements->push_back(7);
-  elements->push_back(1);
-  elements->push_back(8);
-
-  // 5 faces around point 3
-  elements->push_back(3);
-  elements->push_back(9);
-  elements->push_back(4);
-
-  elements->push_back(3);
-  elements->push_back(4);
-  elements->push_back(2);
-
-  elements->push_back(3);
-  elements->push_back(2);
-  elements->push_back(6);
-
-  elements->push_back(3);
-  elements->push_back(6);
-  elements->push_back(8);
-
-  elements->push_back(3);
-  elements->push_back(8);
-  elements->push_back(9);
-
-  // 5 adjacent faces
-  elements->push_back(4);
-  elements->push_back(9);
-  elements->push_back(5);
-
-  elements->push_back(2);
-  elements->push_back(4);
-  elements->push_back(11);
-
-  elements->push_back(6);
-  elements->push_back(2);
-  elements->push_back(10);
-
-  elements->push_back(8);
-  elements->push_back(6);
-  elements->push_back(7);
-
-  elements->push_back(9);
-  elements->push_back(8);
-  elements->push_back(1);
+  MyObject3D::render(M, program_ID);
 }
 
 template <class T>

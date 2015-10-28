@@ -10,13 +10,14 @@ struct Material
 	vec3 color_specular;
 	float reflectance; // [0, 1]
 	float specular_reflectance; // [0, 1], part of reflectance
-	float specular_polish; // [0, 1]
+	float specular_cone_angle; // [0, 1]
 	float radiosity;
 };
 
 struct LightSource
 {
 	float intensity;
+	float radius;
 	vec3 color;
 	vec3 position;
 };
@@ -217,7 +218,7 @@ vec3 calculateLocalSpecular()
 
 	vec3 spcular =
 	light.color * light.intensity *
-	pow(max(cos_alpha, 0), (material.specular_polish + 0.1) * 50);// *
+	pow(max(cos_alpha, 0), (1 / (material.specular_cone_angle + 0.1)) * 20);// *
 	/*1 / pow(light_dist, 2);*/
 
 	return spcular;
@@ -227,7 +228,7 @@ vec3 calculateGlobalSpecular()
 {
 	vec3 v = normalize( vertexPosition_worldspace - eyePosition_worldspace );
 	vec3 r = reflect(v, normalize(normal_worldspace));
-	float cone_angle = atan((1 - material.specular_polish) * M_PI / 2);
+	float cone_angle = material.specular_cone_angle;//atan((1 - material.specular_cone_angle) * M_PI / 2);
 	return coneTrace(r, cone_angle, 2, 200);
 }
 
@@ -238,9 +239,7 @@ vec3 calculateGlobalDirectDiffuse()
 	float light_dist = length(light_diff);
 	vec3 l = normalize(light_diff);
 
-	float lamp_radius = 0.1;
-
-	float cone_angle = atan(lamp_radius / light_dist) * 2;
+	float cone_angle = atan(light.radius / light_dist) * 2;
 	float cosTheta = dot(n,l);
 
 	vec3 diffuse =
