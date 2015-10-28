@@ -63,6 +63,7 @@ private:
 
 
 	static TwBar* tweakbar_;
+	static MyObject3D* selected_obj_;
 	// Tweakable variables
 	float hej;
 

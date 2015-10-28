@@ -105,6 +105,11 @@ bool Object3D::intersects(glm::vec3 origin, glm::vec3 direction, float* t)
   {
     float curr_t;
     AbstractMesh* a = dynamic_cast<AbstractMesh*>(this->children[i]);
+
+    // Transform to world coordinates
+    origin = glm::vec3(glm::inverse(getTotalTransform()) * glm::vec4(origin, 1));
+    direction = glm::vec3(glm::inverse(getTotalTransform()) * glm::vec4(direction, 0));
+
     if (a && a->intersects(origin, direction, &curr_t) && curr_t < t_min)  {
       intersected = true;
       t_min = curr_t;
@@ -310,36 +315,27 @@ BoundingBox::~BoundingBox()
 
 bool BoundingBox::intersects(glm::vec3 point)
 {
-  // Transform to world coordinates
-  glm::vec3 min_world = min;// glm::vec3(getTotalTransform() * glm::vec4(min, 1));
-  glm::vec3 max_world = max;// glm::vec3(getTotalTransform() * glm::vec4(max, 1));
-  return (point.x > min_world.x &&
-          point.y > min_world.y &&
-          point.z > min_world.z &&
-          point.x < max_world.x &&
-          point.y < max_world.y &&
-          point.z < max_world.z);
+  return (point.x > min.x &&
+          point.y > min.y &&
+          point.z > min.z &&
+          point.x < max.x &&
+          point.y < max.y &&
+          point.z < max.z);
 }
 
 bool BoundingBox::intersects(glm::vec3 origin, glm::vec3 direction, float* t)
 {
-  // Transform to world coordinates
-  origin = glm::vec3(glm::inverse(getTotalTransform()) * glm::vec4(origin, 1));
-  direction = glm::vec3(glm::inverse(getTotalTransform()) * glm::vec4(direction, 0));
-  glm::vec3 min_world = min;// glm::vec3(getTotalTransform() * glm::vec4(min, 1));
-  glm::vec3 max_world = max;// glm::vec3(getTotalTransform() * glm::vec4(max, 1));
-
   // r.dir is unit direction vector of ray
   glm::vec3 dirfrac(1.0f / direction.x, 1.0f / direction.y, 1.0f / direction.z);
   // lb is the corner of AABB with minimal coordinates - left bottom, 
   // rt is maximal corner
   // r.org is the origin of ray
-  float t1 = (min_world.x - origin.x)*dirfrac.x;
-  float t2 = (max_world.x - origin.x)*dirfrac.x;
-  float t3 = (min_world.y - origin.y)*dirfrac.y;
-  float t4 = (max_world.y - origin.y)*dirfrac.y;
-  float t5 = (min_world.z - origin.z)*dirfrac.z;
-  float t6 = (max_world.z - origin.z)*dirfrac.z;
+  float t1 = (min.x - origin.x)*dirfrac.x;
+  float t2 = (max.x - origin.x)*dirfrac.x;
+  float t3 = (min.y - origin.y)*dirfrac.y;
+  float t4 = (max.y - origin.y)*dirfrac.y;
+  float t5 = (min.z - origin.z)*dirfrac.z;
+  float t6 = (max.z - origin.z)*dirfrac.z;
 
   float tmin = glm::max(
     glm::max(glm::min(t1, t2), glm::min(t3, t4)),
@@ -471,9 +467,9 @@ void OrthoCamera::render(
 
 LightSource::LightSource()
 {
-  intensity = 0.8f;
+  intensity = 1;
   color = glm::vec3(1.0, 1.0, 1.0);
-  position = glm::vec3(0.0, 1.0, 0.0);
+  position = glm::vec3(0.0, 0.8, 0.0);
 }
 
 void LightSource::render(glm::mat4 M, GLuint program_ID)

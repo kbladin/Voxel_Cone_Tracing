@@ -14,6 +14,7 @@ bool MyEngine::mouse_control_;
 float MyEngine::mouse_x_;
 float MyEngine::mouse_y_;
 TwBar* MyEngine::tweakbar_;
+MyObject3D* MyEngine::selected_obj_;
 
 MyEngine::MyEngine() : SimpleGraphicsEngine()
 {
@@ -112,7 +113,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   material1.radiosity = 0.0;
 
   Material red;
-  red.color_diffuse = glm::vec3(1,0.5,0.5);
+  red.color_diffuse = glm::vec3(1,0.2,0.2);
   red.color_specular = glm::vec3(1,1,1);
   red.reflectance = 1.0;
   red.specular_reflectance = 0.0;
@@ -120,7 +121,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   red.radiosity = 0.0;
 
   Material green;
-  green.color_diffuse = glm::vec3(0.5,1,0.5);
+  green.color_diffuse = glm::vec3(0.2,1,0.2);
   green.color_specular = glm::vec3(1,1,1);
   green.reflectance = 1.0;
   green.specular_reflectance = 0.0;
@@ -149,7 +150,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   material_light.reflectance = 0;
   material_light.specular_reflectance = 0;
   material_light.specular_polish = 0;
-  material_light.radiosity = 20;
+  material_light.radiosity = 0.5;
 
   // Objects
   //planet_ = new Planet();
@@ -173,7 +174,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   //createObjectTweakbar(bunny_);
 
   floor_->addChild(floor_mesh_);
-  floor_->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(2,2,2));
+  floor_->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(2.0,2.0,2.0));
   floor_->transform_matrix_ = glm::translate(glm::vec3(0.0f,-1.0f,0.0f)) * floor_->transform_matrix_;
   
   roof_->addChild(floor_mesh_);
@@ -200,11 +201,11 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   bunny2_->transform_matrix_ = glm::translate(glm::vec3(1.0f,0.0f,0.0f)) * bunny2_->transform_matrix_;
 
   light_object_->addChild(icosphere_);
-  light_object_->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(0.3,0.3,0.3));
-  light_object_->transform_matrix_ = glm::translate(glm::vec3(0.0,1.0f,0.0)) * light_object_->transform_matrix_;
+  light_object_->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(0.1,0.1,0.1));
+  light_object_->transform_matrix_ = glm::translate(glm::vec3(0.0,0.8f,0.0)) * light_object_->transform_matrix_;
 
   scene_->addChild(floor_);
-  scene_->addChild(roof_);
+  //scene_->addChild(roof_);
   scene_->addChild(l_wall_);
   scene_->addChild(r_wall_);
   scene_->addChild(b_wall_);
@@ -549,6 +550,7 @@ void MyEngine::mouseButtonCallback(GLFWwindow * window, int button, int action, 
     if (selected_obj)
     {
       createObjectTweakbar(selected_obj);
+      selected_obj_ = selected_obj;
     }
   }
 }
@@ -642,15 +644,24 @@ void MyEngine::updateCameraController()
   camera_->transform_matrix_ = T * R;
 
 
-  if (glfwGetKey(window_, GLFW_KEY_DOWN) == GLFW_PRESS)
+  if (selected_obj_)
   {
-    bunny_->transform_matrix_ = bunny_->transform_matrix_ * glm::translate(glm::vec3(0,-0.1,0));
-    //bunny2_->transform_matrix_ = bunny2_->transform_matrix_ * glm::translate(glm::vec3(0,-0.1,0));
-  }
-  if (glfwGetKey(window_, GLFW_KEY_UP) == GLFW_PRESS)
-  {
-    bunny_->transform_matrix_ = bunny_->transform_matrix_ * glm::translate(glm::vec3(0,0.1,0));
-    //bunny2_->transform_matrix_ = bunny2_->transform_matrix_ * glm::translate(glm::vec3(0,0.1,0));
+    if (glfwGetKey(window_, GLFW_KEY_DOWN) == GLFW_PRESS)
+    {
+      selected_obj_->transform_matrix_ = selected_obj_->transform_matrix_ * camera_->transform_matrix_ * glm::translate(glm::vec3(0,-0.1,0)) * glm::inverse(camera_->transform_matrix_);
+    }
+    if (glfwGetKey(window_, GLFW_KEY_UP) == GLFW_PRESS)
+    {
+      selected_obj_->transform_matrix_ = selected_obj_->transform_matrix_ * camera_->transform_matrix_ * glm::translate(glm::vec3(0,0.1,0)) * glm::inverse(camera_->transform_matrix_);
+    }
+    if (glfwGetKey(window_, GLFW_KEY_LEFT) == GLFW_PRESS)
+    {
+      selected_obj_->transform_matrix_ = selected_obj_->transform_matrix_ * camera_->transform_matrix_ * glm::translate(glm::vec3(-0.1,0,0)) * glm::inverse(camera_->transform_matrix_);
+    }
+    if (glfwGetKey(window_, GLFW_KEY_RIGHT) == GLFW_PRESS)
+    {
+      selected_obj_->transform_matrix_ = selected_obj_->transform_matrix_ * camera_->transform_matrix_ * glm::translate(glm::vec3(0.1,0,0)) * glm::inverse(camera_->transform_matrix_);
+    }
   }
 }
 
