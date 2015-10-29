@@ -1,6 +1,6 @@
 #version 450 core
 
-
+#define gammacorr(x) pow(x, 1/2.6)
 
 in vec2 texCoord;
 in vec3 vertexPosition_screenspace_frag;
@@ -44,4 +44,5 @@ void main(){
 			break;
 	}
 	color = res;
+	color.rgb = vec3(gammacorr(color.r), gammacorr(color.g), gammacorr(color.b));
 }

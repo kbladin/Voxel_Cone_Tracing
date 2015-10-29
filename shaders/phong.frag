@@ -1,5 +1,7 @@
 #version 410 core
 
+#define gammacorr(x) pow(x, 1/2.6)
+
 struct Material
 {
 	vec3 color_diffuse;
@@ -50,4 +52,5 @@ vec3 calculateLocalDiffuse()
 void main(){
 	color.rgb = calculateLocalDiffuse() * material.color_diffuse * material.reflectance * (1 - material.specular_reflectance);
     color.a = 1;
+	color.rgb = vec3(gammacorr(color.r), gammacorr(color.g), gammacorr(color.b));
 }
