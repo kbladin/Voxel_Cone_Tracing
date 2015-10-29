@@ -19,15 +19,22 @@ MyObject3D* MyEngine::selected_obj_;
 MyEngine::MyEngine() : SimpleGraphicsEngine()
 {
   mouse_control_ = true;
+  render_mode_ = RenderMode::global;
 
   TwInit(TW_OPENGL_CORE, NULL); // for core profile
-/*
-  hej = 0;
-  TwBar *myBar;
-  myBar = TwNewBar("NameOfMyTweakBar");
-  TwAddVarRW(myBar, "NameOfMyVariable", TW_TYPE_INT8, &tex_size, " min=8 max=256 step=8 group=Engine label='Texture size' ");
-*/
   TwWindowSize(640 * 2, 480 * 2);
+
+  global_tweakbar_ = TwNewBar("GlobalTweakBar");
+/*
+  TwAddVarRW(global_tweakbar_, "diffuseColor", TW_TYPE_COLOR3F, &obj->getMaterialPointer()->color_diffuse.r, " group=material label='Diffuse color' ");
+  TwAddVarRW(global_tweakbar_, "specularColor", TW_TYPE_COLOR3F, &obj->getMaterialPointer()->color_specular.r, " group=material label='Specular color' ");
+  TwAddVarRW(global_tweakbar_, "reflectance", TW_TYPE_FLOAT, &obj->getMaterialPointer()->reflectance, " group=material min=0 max=1 step=0.01 label='reflectance' ");
+  TwAddVarRW(global_tweakbar_, "specularReflectance", TW_TYPE_FLOAT, &obj->getMaterialPointer()->specular_reflectance, " group=material min=0 max=1 step=0.01 label='Specular reflectance' ");
+  TwAddVarRW(global_tweakbar_, "specularPolish", TW_TYPE_FLOAT, &obj->getMaterialPointer()->specular_cone_angle, " group=material min=0 max=1.57 step=0.01 label='Specular cone angle' ");
+  TwAddVarRW(global_tweakbar_, "radiosity", TW_TYPE_FLOAT, &obj->getMaterialPointer()->radiosity, " group=material min=0 max=10 step=0.01 label='Radiosity' ");
+*/
+  TwType render_mode_type = TwDefineEnum("RenderModeType", NULL, 0);
+  TwAddVarRW(global_tweakbar_, "Render mode", render_mode_type, &render_mode_, " enum='0 {Phong}, 1 {Voxels}, 2 {Global}' ");
 
   // Shaders
   ShaderManager::instance()->loadShader(
@@ -195,14 +202,14 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
 
   bunny_->addChild(bunny_mesh_);
   bunny_->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(0.2,0.2,0.2));
-  bunny_->transform_matrix_ = glm::translate(glm::vec3(-0.0f,0.0f,0.0f)) * bunny_->transform_matrix_;
+  bunny_->transform_matrix_ = glm::translate(glm::vec3(-0.3f,-0.5f,0.0f)) * bunny_->transform_matrix_;
 
   monkey_->addChild(monkey_mesh_);
   monkey_->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(0.2,0.2,0.2));
-  monkey_->transform_matrix_ = glm::translate(glm::vec3(1.0f,0.0f,0.0f)) * monkey_->transform_matrix_;
+  monkey_->transform_matrix_ = glm::translate(glm::vec3(0.5f,0.0f,0.0f)) * monkey_->transform_matrix_;
 
   light_object_->transform_matrix_ = glm::scale(glm::mat4(), glm::vec3(0.1,0.1,0.1));
-  light_object_->transform_matrix_ = glm::translate(glm::vec3(0.0,0.8f,0.0)) * light_object_->transform_matrix_;
+  light_object_->transform_matrix_ = glm::translate(glm::vec3(0.0,0.6f,0.0)) * light_object_->transform_matrix_;
 
   scene_->addChild(floor_);
   scene_->addChild(roof_);
@@ -250,6 +257,11 @@ MyEngine::~MyEngine()
 
   delete fbo1_;
   delete fbo2_;
+
+  if (tweakbar_)
+    TwDeleteBar(tweakbar_);
+  if (global_tweakbar_)
+    TwDeleteBar(global_tweakbar_);
 }
 
 void MyEngine::update()
@@ -304,10 +316,14 @@ void MyEngine::render()
 {
   SimpleGraphicsEngine::render();
   
-  voxelizeScene();
-  renderGlobal();
-  //renderLocalDiffuse();
-  //renderVolume();
+  if (!render_mode_ == RenderMode::phong)
+    voxelizeScene();
+  if (render_mode_ == RenderMode::global)
+    renderGlobal();
+  else if (render_mode_ == RenderMode::phong)
+    renderLocalDiffuse();
+  else if (render_mode_ == RenderMode::voxels)
+    renderVolume();
 
   int w, h;
   glfwGetWindowSize(window_, &w, &h);

@@ -21,6 +21,13 @@ struct Material
 	float radiosity;
 };
 
+enum RenderMode
+{
+	phong,
+	voxels,
+	global
+};
+
 //! The actual program extending SimpleGraphicsEngine
 /*!
 	Here, all objects can be added to the scene_ and input is handled outside of
@@ -64,9 +71,11 @@ private:
 
 
 	static TwBar* tweakbar_;
+	TwBar* global_tweakbar_;
 	static MyObject3D* selected_obj_;
+	
 	// Tweakable variables
-	float hej;
+	RenderMode render_mode_;
 
 	// Constants
 	int tex_size = 128;

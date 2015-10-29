@@ -50,7 +50,7 @@ float random(float xx){
 }
 
 // Trace cone from position vertexPosition_worldspace and accumulate color
-vec3 coneTrace(vec3 rayDirection, float coneAngle, float multiSample, int steps, bool lightTrace)
+vec3 coneTrace(vec3 rayDirection, float coneAngle, float multiSample, int steps)
 {
 	//coneAngle = M_PI / 30;
 	vec4 res = vec4(0,0,0,0);
@@ -167,13 +167,13 @@ vec3 calculateGlobalDiffuse(vec3 n_worldspace)
    	
    	float multiSample = 4;
    	// First trace a cone in the normal direction
-   	res += coneTrace(rayDirection, coneAngle, multiSample, 200, false);
+   	res += coneTrace(rayDirection, coneAngle, multiSample, 200);
    	float inclination = M_PI / 4;
 
    	for (int i = 0; i < 5; ++i)
    	{
    		rayDirection = n * cos(inclination) + sin(inclination) * (cos( i * 2 * M_PI / 5) * t + sin(i * 2 * M_PI / 5) * bt);
-   		res += coneTrace(normalize(rayDirection), coneAngle, multiSample, 200, false);
+   		res += coneTrace(normalize(rayDirection), coneAngle, multiSample, 200);
    	}
 
    	return res / 6;
@@ -231,7 +231,7 @@ vec3 calculateGlobalSpecular()
 	vec3 v = normalize( vertexPosition_worldspace - eyePosition_worldspace );
 	vec3 r = reflect(v, normalize(normal_worldspace));
 	float cone_angle = material.specular_cone_angle;//atan((1 - material.specular_cone_angle) * M_PI / 2);
-	return coneTrace(r, cone_angle, 2, 200, false);
+	return coneTrace(r, cone_angle, 2, 200);
 }
 
 vec3 calculateGlobalDirectDiffuse()
@@ -245,7 +245,7 @@ vec3 calculateGlobalDirectDiffuse()
 	float cosTheta = dot(n,l);
 
 	vec3 diffuse =
-		coneTrace(l, cone_angle, 8, 200, true) *
+		coneTrace(l, cone_angle, 8, 200) *
 		max(cosTheta, 0) *
 		1 / pow(light_dist, 2);
 
