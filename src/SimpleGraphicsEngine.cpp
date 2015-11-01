@@ -383,7 +383,7 @@ void AbstractCamera::render(glm::mat4 M, GLuint program_ID)
   glUniformMatrix4fv(glGetUniformLocation(program_ID, "P"), 1, GL_FALSE, &projection_transform_matrix_[0][0]);
 }
 
-PerspectiveCamera::PerspectiveCamera(GLFWwindow* window) :
+PerspectiveCamera::PerspectiveCamera(GLFWwindow* window, float fov) :
 AbstractCamera()
 {
   window_ = window;
@@ -397,7 +397,7 @@ AbstractCamera()
     aspect = float(width)/height;
   } 
 
-  projection_transform_matrix_ = glm::perspective(45.0f, aspect, 0.1f, 100.0f);
+  projection_transform_matrix_ = glm::perspective(fov, aspect, 0.1f, 100.0f);
 }
 
 void PerspectiveCamera::render(glm::mat4 M, GLuint program_ID)
@@ -707,131 +707,4 @@ void FBO::useFBO(FBO *out, FBO *in1, FBO *in2)
     glBindTexture(GL_TEXTURE_2D, in1->texid_);
   else
     glBindTexture(GL_TEXTURE_2D, 0);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void FBO3D::CHECK_FRAMEBUFFER_STATUS()
-{
-  GLenum status;
-  status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-  if (status != GL_FRAMEBUFFER_COMPLETE)
-    fprintf(stderr, "Framebuffer not complete\n");
-}
-
-FBO3D::FBO3D(int size)
-{
-  size_ = size;
-  
-  // create objects
-  glGenFramebuffers(1, &fb_); // frame buffer id
-  glBindFramebuffer(GL_FRAMEBUFFER, fb_);
-  glGenTextures(1, &texid_);
-  fprintf(stderr, "%i \n", texid_);
-  glBindTexture(GL_TEXTURE_3D, texid_);
-
-  std::vector<float> data;
-  data.resize(4 * size*size*size);
-  for (int i = 0; i < 4 * size*size*size; ++i)
-  {
-    data[i] = 0.0f;
-  }
-
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-
-  glTexStorage3D(GL_TEXTURE_3D, 10, GL_RGBA32F, size, size, size);
-  glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, size, size, size, 0, GL_RGBA, GL_FLOAT, &data[0]);
-  //glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA, size, size, size, 0, GL_RGBA, GL_FLOAT, NULL);
-
-  glGenerateMipmap(GL_TEXTURE_3D); // Allocate the mipmaps  
-
-  glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_3D, texid_, 0, 0);
-
-
-  // Renderbuffer
-  // initialize depth renderbuffer
-  glGenRenderbuffers(1, &rb_);
-  glBindRenderbuffer(GL_RENDERBUFFER, rb_);
-  glRenderbufferStorage( GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, size_, size_ );
-  glFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rb_ );
-  CHECK_FRAMEBUFFER_STATUS();
-
-  fprintf(stderr, "Framebuffer object %d\n", fb_);
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
-FBO3D::~FBO3D()
-{
-   //Delete resources
-   glDeleteTextures(1, &texid_);
-   glDeleteRenderbuffersEXT(1, &rb_);
-   //Bind 0, which means render to back buffer, as a result, fb is unbound
-   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-   glDeleteFramebuffersEXT(1, &fb_);
-}
-
-// choose input (textures) and output (FBO)
-void FBO3D::useFBO(FBO3D *out, FBO3D *in1, FBO3D *in2)
-{
-  GLint curfbo;
-
-// This was supposed to catch changes in viewport size and update lastw/lasth.
-// It worked for me in the past, but now it causes problems to I have to
-// fall back to manual updating.
-  glGetIntegerv(GL_FRAMEBUFFER_BINDING, &curfbo);
-  if (curfbo == 0)
-  {
-    GLint viewport[4] = {0,0,0,0};
-    GLint w, h;
-    glGetIntegerv(GL_VIEWPORT, viewport);
-    w = viewport[2] - viewport[0];
-    h = viewport[3] - viewport[1];
-    if ((w > 0) && (h > 0) && (w < 65536) && (h < 65536)) // I don't believe in 64k pixel wide frame buffers for quite some time
-    {
-      lastw = viewport[2] - viewport[0];
-      lasth = viewport[3] - viewport[1];
-    }
-  }
-  
-  if (out != nullptr)
-    glViewport(0, 0, out->size_, out->size_);
-  else
-    glViewport(0, 0, lastw, lasth);
-
-  if (out != nullptr)
-  {
-    glBindFramebuffer(GL_FRAMEBUFFER, out->fb_);
-    glViewport(0, 0, out->size_, out->size_);
-  }
-  else
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  glActiveTexture(GL_TEXTURE1);
-  if (in2 != nullptr)
-    glBindTexture(GL_TEXTURE_3D, in2->texid_);
-  else
-    glBindTexture(GL_TEXTURE_3D, 0);
-  glActiveTexture(GL_TEXTURE0);
-  if (in1 != nullptr)
-    glBindTexture(GL_TEXTURE_3D, in1->texid_);
-  else
-    glBindTexture(GL_TEXTURE_3D, 0);
 }

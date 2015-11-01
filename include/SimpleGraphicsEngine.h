@@ -118,7 +118,7 @@ namespace SGE {
   //! PerspectiveCamera
   class PerspectiveCamera : public AbstractCamera {
   public:
-    PerspectiveCamera(GLFWwindow* window = nullptr);
+    PerspectiveCamera(GLFWwindow* window = nullptr, float fov = 45);
     virtual void render(glm::mat4 M, GLuint program_ID);
   private:
     GLFWwindow* window_;
@@ -199,22 +199,6 @@ namespace SGE {
     GLuint rb_;
     GLuint depth_;
     int width_, height_;
-  };
-
-  class FBO3D
-  {
-  public:
-    FBO3D(int size);
-    ~FBO3D();
-
-    static void useFBO(FBO3D *out, FBO3D *in1, FBO3D *in2);
-    static void CHECK_FRAMEBUFFER_STATUS();
-
-    GLuint texid_;
-    GLuint fb_;
-    GLuint rb_;
-    GLuint depth_;
-    int size_;
   };
 }
 

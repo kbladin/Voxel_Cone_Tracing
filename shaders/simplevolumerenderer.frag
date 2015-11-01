@@ -35,7 +35,7 @@ void main(){
 		rayOrigin = texture(texUnitFrontCube, texCoord).xyz;
 	vec3 rayEnd = texture(texUnitBackCube, texCoord).xyz;
 	vec3 rayDirection = normalize(rayEnd - rayOrigin);
-	float rayStep = 0.005;
+	float rayStep = 0.002;
 	int nSteps = int(length(rayEnd - rayOrigin) / rayStep);
 
 	for (int i=0; i<nSteps; i++)
@@ -53,7 +53,7 @@ void main(){
 			res.rgb = res.rgb + (1 - res.a) * texSample.a * texSample.rgb;
 	        res.a   = res.a   + (1 - res.a) * texSample.a;
 		}
-		if (res.a > 0.8)
+		if (res.a > 0.95)
 			break;
 	}
 	color = res;

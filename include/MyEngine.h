@@ -10,6 +10,7 @@ class Planet;
 class Quad;
 class MyObject3D;
 class LightObject3D;
+class CubeTextureFBO;
 
 struct Material
 {
@@ -154,9 +155,37 @@ private:
 
 class LightObject3D : public MyObject3D {
 public:
-	LightObject3D(TriangleMesh* mesh, Material material);
+	enum RenderMode
+	{
+		shadow_map,
+		normal
+	};
+	LightObject3D(TriangleMesh* mesh, Material material, Object3D* scene = nullptr);
 	~LightObject3D();
+	void setRenderMode(RenderMode mode);
 	void render(glm::mat4 M, GLuint program_ID);
+private:
+	CubeTextureFBO* cube_map;
+	PerspectiveCamera* cube_cameras[6];
+	RenderMode render_mode;
+	bool currently_mapping;
+	Object3D* scene_;
+};
+
+class CubeTextureFBO
+{
+public:
+	CubeTextureFBO(int size);
+	~CubeTextureFBO();
+
+	void bind(GLenum TextureUnit);
+	int getSize(){return size;};
+	int getTextureHandle(){return texture;};
+private:
+	int size;
+	GLuint fbo;
+	GLuint depth_render_buffer;
+	GLuint texture;
 };
 
 #endif

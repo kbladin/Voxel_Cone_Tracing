@@ -60,8 +60,8 @@ vec3 coneTrace(vec3 rayDirection, float coneAngle, float multiSample, int steps)
 	float voxelSize = float(1) / textureSize * 2;
 
 	vec3 rayOrigin = vertexPosition_worldspace + voxelSize * sceneScale * M_SQRT3 * normalize(normal_worldspace);
-	float sampleStep = 0.01;
-	float t = sampleStep;
+	float sampleStep = voxelSize / 2;
+	float t = 0;//0.05 * sampleFactor * random(123314 *( 1 + time) *(vertexPosition_viewspace.x + vertexPosition_viewspace.y + vertexPosition_viewspace.z));
 	for (int i=0; i<steps; i++)
 	{
 		// Increment sampleStep
@@ -153,10 +153,10 @@ vec3 calculateGlobalDiffuse(vec3 n_worldspace)
 	vec3 n = n_worldspace;
    	vec3 rayDirection = n;
    	vec3 res;
-   	float coneAngle = M_PI / 4;
+   	float coneAngle = M_PI / 3;
 
    	// Pick a random vector helper
-   	vec3 helper = normalize(vec3(random(int(vertexPosition_worldspace.x * 5226)),random(int(vertexPosition_worldspace.y * 5226)),random(int(vertexPosition_worldspace.z * 5226))));
+   	vec3 helper = vec3(0.12,0.32,0.82);// normalize(vec3(random(int(vertexPosition_worldspace.x * 5226)),random(int(vertexPosition_worldspace.y * 5226)),random(int(vertexPosition_worldspace.z * 5226))));
    	if (abs(dot(n,helper)) == 1)
    		// Pick a new helper
    		helper = vec3(0,1,0);
@@ -166,6 +166,7 @@ vec3 calculateGlobalDiffuse(vec3 n_worldspace)
    	vec3 bt = cross(t, n);
    	
    	float multiSample = 4;
+   	/*
    	// First trace a cone in the normal direction
    	res += coneTrace(rayDirection, coneAngle, multiSample, 200);
    	float inclination = M_PI / 4;
@@ -177,32 +178,30 @@ vec3 calculateGlobalDiffuse(vec3 n_worldspace)
    	}
 
    	return res / 6;
+   	*/
    	
-   	/*
    	// First trace a cone in the normal direction
-   	res += coneTrace(rayDirection, coneAngle, 1) / 6;
+   	res += coneTrace(rayDirection, coneAngle, multiSample, 200);
 
    	// Rotate the ray direction 30 degrees around the tangent to achieve the next
    	// ray direction
-   	rayDirection = 0.5 * n + sqrt(3)/2 * t;
-   	res += coneTrace(rayDirection, coneAngle, 1) / 6;
+   	rayDirection = 0.7071 * n + 0.7071 * t;
+   	res += coneTrace(rayDirection, coneAngle, multiSample, 200);
 
    	// Next sample direction
-   	rayDirection = 0.5 * n + sqrt(3)/2 * (0.25 * (sqrt(5) - 1) * t + sqrt(float(5)/8 + sqrt(5)/8) * bt);
-   	res += coneTrace(rayDirection, coneAngle, 1) / 6;
+   	rayDirection = 0.7071 * n + 0.7071 * (0.309 * t + 0.951 * bt);
+   	res += coneTrace(rayDirection, coneAngle, multiSample, 200);
   	// Next sample direction
-   	rayDirection = 0.5 * n + sqrt(3)/2 * (0.25 * (sqrt(5) - 1) * t - sqrt(float(5)/8 + sqrt(5)/8) * bt);
-   	res += coneTrace(rayDirection, coneAngle, 1) / 6;
+   	rayDirection = 0.7071 * n + 0.7071 * (-0.809 * t + 0.588 * bt);
+   	res += coneTrace(rayDirection, coneAngle, multiSample, 200);
 	// Next sample direction
-   	rayDirection = 0.5 * n - sqrt(3)/2 * (0.25 * (sqrt(5) + 1) * t + sqrt(float(5)/8 - sqrt(5)/8) * bt);
-   	res += coneTrace(rayDirection, coneAngle, 1) / 6;
+   	rayDirection = 0.7071 * n - 0.7071 * (-0.809 * t - 0.588 * bt);
+   	res += coneTrace(rayDirection, coneAngle, multiSample, 200);
    	// Next sample direction
-   	rayDirection = 0.5 * n - sqrt(3)/2 * (0.25 * (sqrt(5) + 1) * t - sqrt(float(5)/8 - sqrt(5)/8) * bt);
-   	res += coneTrace(rayDirection, coneAngle, 1) / 6;
+   	rayDirection = 0.7071 * n - 0.7071 * (0.309 * t - 0.951 * bt);
+   	res += coneTrace(rayDirection, coneAngle, multiSample, 200);
 
-   	return res * 6 * 100;
-   	*/
-   	
+   	return res / 6;
 }
 
 vec3 calculateLocalSpecular()
@@ -231,7 +230,7 @@ vec3 calculateGlobalSpecular()
 	vec3 v = normalize( vertexPosition_worldspace - eyePosition_worldspace );
 	vec3 r = reflect(v, normalize(normal_worldspace));
 	float cone_angle = material.specular_cone_angle;//atan((1 - material.specular_cone_angle) * M_PI / 2);
-	return coneTrace(r, cone_angle, 2, 200);
+	return coneTrace(r, cone_angle, 4, 200);
 }
 
 vec3 calculateGlobalDirectDiffuse()
@@ -259,8 +258,8 @@ void main(){
 	{
 		// Add diffuse
 		//color.rgb = calculateLocalDiffuse() * material.color_diffuse * material.reflectance * (1 - material.specular_reflectance);
-		color.rgb += calculateGlobalDiffuse(normalize(normal_worldspace)) * material.color_diffuse * material.reflectance * (1 - material.specular_reflectance);
 		color.rgb += calculateGlobalDirectDiffuse() * material.color_diffuse * material.reflectance * (1 - material.specular_reflectance);
+		color.rgb += calculateGlobalDiffuse(normalize(normal_worldspace)) * material.color_diffuse * material.reflectance * (1 - material.specular_reflectance);
 	}
 	// Add specular
 	if (material.reflectance != 0 && material.specular_reflectance != 0)

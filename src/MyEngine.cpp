@@ -175,7 +175,7 @@ MyEngine::MyEngine() : SimpleGraphicsEngine()
   b_wall_ = new MyObject3D(material3);
   bunny_ = new MyObject3D(material3);
   monkey_ = new MyObject3D(material3);
-  light_object_ = new LightObject3D(icosphere_, material_light);
+  light_object_ = new LightObject3D(icosphere_, material_light, scene_);
 
   //light_ = new LightSource();
 
@@ -314,8 +314,9 @@ void MyEngine::init3DTexture()
 
 void MyEngine::render()
 {
-  SimpleGraphicsEngine::render();
-  
+  //light_object_->setRenderMode(LightObject3D::RenderMode::shadow_map);
+  //light_object_->render(glm::mat4(), shader_phong_);
+
   if (!render_mode_ == RenderMode::phong)
     voxelizeScene();
   if (render_mode_ == RenderMode::global)
@@ -329,6 +330,8 @@ void MyEngine::render()
   glfwGetWindowSize(window_, &w, &h);
   TwWindowSize(w, h);
   TwDraw();  // draw the tweak bar(s)
+
+  SimpleGraphicsEngine::render();
 }
 
 void MyEngine::clearVoxels()
@@ -599,7 +602,7 @@ void MyEngine::createObjectTweakbar(MyObject3D* obj)
   {
     TwDeleteBar(tweakbar_);
   }
-  tweakbar_ = TwNewBar("NameOfMyTweakBar");
+  tweakbar_ = TwNewBar("Selected Object");
   TwAddVarRW(tweakbar_, "diffuseColor", TW_TYPE_COLOR3F, &obj->getMaterialPointer()->color_diffuse.r, " group=material label='Diffuse color' ");
   TwAddVarRW(tweakbar_, "specularColor", TW_TYPE_COLOR3F, &obj->getMaterialPointer()->color_specular.r, " group=material label='Specular color' ");
   TwAddVarRW(tweakbar_, "reflectance", TW_TYPE_FLOAT, &obj->getMaterialPointer()->reflectance, " group=material min=0 max=1 step=0.01 label='reflectance' ");
@@ -750,28 +753,72 @@ Quad::~Quad()
   delete mesh_;
 }
 
-LightObject3D::LightObject3D(TriangleMesh* mesh, Material material) :
-  MyObject3D(material)
+LightObject3D::LightObject3D(TriangleMesh* mesh, Material material, Object3D* scene) :
+  MyObject3D(material), scene_(scene)
 {
   this->addChild(mesh);
+  cube_map = new CubeTextureFBO(256);
+  render_mode = RenderMode::normal;
+  currently_mapping = false;
+  for (int i = 0; i < 6; ++i)
+  {
+    cube_cameras[i] = new PerspectiveCamera(nullptr, 90);
+    this->addChild(cube_cameras[i]);
+  }
+  cube_cameras[0]->transform_matrix_ = glm::rotate(float(-M_PI / 2), glm::vec3(0.0f,1.0f,0.0f));
+  cube_cameras[1]->transform_matrix_ = glm::rotate(float(M_PI / 2), glm::vec3(0.0f,1.0f,0.0f));
+  cube_cameras[2]->transform_matrix_ = glm::rotate(float(M_PI / 2), glm::vec3(1.0f,0.0f,0.0f));
+  cube_cameras[3]->transform_matrix_ = glm::rotate(float(-M_PI / 2), glm::vec3(1.0f,0.0f,0.0f));
+  cube_cameras[4]->transform_matrix_ = glm::rotate(float(M_PI), glm::vec3(0.0f,1.0f,0.0f));
+  cube_cameras[5]->transform_matrix_ = glm::rotate(float(0), glm::vec3(0.0f,1.0f,0.0f));
 }
 
 LightObject3D::~LightObject3D()
 {
+  delete cube_map;
+  for (int i = 0; i < 6; ++i)
+  {
+    delete cube_cameras[i];
+  }
+}
 
+void LightObject3D::setRenderMode(RenderMode mode)
+{
+  render_mode = mode;
 }
 
 void LightObject3D::render(glm::mat4 M, GLuint program_ID)
-{  
-  glm::vec4 position_worldspace = M * getTotalTransform() * glm::vec4(0, 0, 0, 1.0f);
-  float radius = glm::length(M * getTotalTransform() * glm::vec4(1, 0, 0, 0.0f));
+{
+  if (render_mode == RenderMode::normal)
+  {
+    glm::vec4 position_worldspace = M * getTotalTransform() * glm::vec4(0, 0, 0, 1.0f);
+    float radius = glm::length(M * getTotalTransform() * glm::vec4(1, 0, 0, 0.0f));
 
-  glUseProgram(program_ID);
+    glUseProgram(program_ID);
 
-  glUniform1f(glGetUniformLocation(program_ID, "light.intensity"), material_.radiosity);
-  glUniform1f(glGetUniformLocation(program_ID, "light.radius"), radius);  
-  glUniform3f(glGetUniformLocation(program_ID, "light.position"),position_worldspace.x,position_worldspace.y, position_worldspace.z);
-  glUniform3f(glGetUniformLocation(program_ID, "light.color"), material_.color_diffuse.r * material_.radiosity, material_.color_diffuse.g * material_.radiosity, material_.color_diffuse.b * material_.radiosity);
+    glUniform1f(glGetUniformLocation(program_ID, "light.intensity"), material_.radiosity);
+    glUniform1f(glGetUniformLocation(program_ID, "light.radius"), radius);  
+    glUniform3f(glGetUniformLocation(program_ID, "light.position"),position_worldspace.x,position_worldspace.y, position_worldspace.z);
+    glUniform3f(glGetUniformLocation(program_ID, "light.color"), material_.color_diffuse.r * material_.radiosity, material_.color_diffuse.g * material_.radiosity, material_.color_diffuse.b * material_.radiosity);
+
+    MyObject3D::render(M, program_ID);
+  }
+  else if (render_mode == RenderMode::shadow_map && !currently_mapping)
+  {
+    currently_mapping = true;
+    glViewport(0,0, cube_map->getSize(), cube_map->getSize());
+    cube_map->bind(GL_TEXTURE0);
+    for(int i=0;i<1;i++)
+    {
+      glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, cube_map->getTextureHandle(), 0);
+      cube_cameras[i]->render(this->transform_matrix_, program_ID);
+      scene_->render(glm::mat4(), program_ID);
+
+      //if(cubeCameras[i]) scene->SetCurrentCamera(cubeCameras[i]);
+      //if(scene) scene->Render();
+    }
+    currently_mapping = false;
+  }
 
   MyObject3D::render(M, program_ID);
 }
@@ -784,3 +831,43 @@ void MyEngine::Delay(T* input, T end_val, float speed) {
   }
   *input = (end_val - *input) * speed + *input;
 }
+
+CubeTextureFBO::CubeTextureFBO(int size)
+{
+  glGenTextures(1, &texture);
+  glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
+
+  glGenFramebuffers(1, &fbo);
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+  for (int i = 0; i < 6; ++i)
+  {
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, size, size, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, texture, 0);
+  }
+
+  // add a depth attachment
+  glGenRenderbuffers(1, &depth_render_buffer);
+  glBindRenderbuffer(GL_RENDERBUFFER, depth_render_buffer); 
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, size, size); 
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_render_buffer);
+
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+CubeTextureFBO::~CubeTextureFBO()
+{
+
+}
+
+void CubeTextureFBO::bind(GLenum TextureUnit)
+{
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+  glActiveTexture(TextureUnit);
+  glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
+} 
