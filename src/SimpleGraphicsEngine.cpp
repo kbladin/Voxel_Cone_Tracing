@@ -67,6 +67,7 @@ GLuint ShaderManager::getShader(std::string name)
 void Object3D::addChild(Object3D *child)
 {
   children.push_back(child);
+  child->parent_ = this;
 }
 
 void Object3D::removeChild(Object3D *child)
@@ -83,6 +84,56 @@ void Object3D::render(glm::mat4 M, GLuint program_ID)
 {
   for (std::vector<Object3D*>::const_iterator iter = children.begin(); iter != children.end(); iter++) {
     (*iter)->render(M * transform_matrix_, program_ID);
+  }
+}
+
+bool Object3D::intersects(glm::vec3 point)
+{
+  for (int i = 0; i < this->children.size(); ++i)
+  {
+    if (AbstractMesh* a = dynamic_cast<AbstractMesh*>(this->children[i]))  {
+      return a->intersects(point);
+    }
+  }
+}
+
+bool Object3D::intersects(glm::vec3 origin, glm::vec3 direction, float* t)
+{
+  float t_min = 10000000;
+  bool intersected = false;
+  for (int i = 0; i < this->children.size(); ++i)
+  {
+    float curr_t;
+    AbstractMesh* a = dynamic_cast<AbstractMesh*>(this->children[i]);
+
+    // Transform to world coordinates
+    origin = glm::vec3(glm::inverse(getTotalTransform()) * glm::vec4(origin, 1));
+    direction = glm::vec3(glm::inverse(getTotalTransform()) * glm::vec4(direction, 0));
+
+    if (a && a->intersects(origin, direction, &curr_t) && curr_t < t_min)  {
+      intersected = true;
+      t_min = curr_t;
+    }
+  }
+  *t = t_min;
+  return intersected;
+}
+
+Object3D::Object3D()
+{
+  parent_ = nullptr;
+}
+
+glm::mat4 Object3D::getTotalTransform()
+{
+  // Base case:
+  if (!parent_)
+  {
+    return glm::mat4(1);
+  }
+  else
+  { // Recursion
+    return parent_->getTotalTransform() * transform_matrix_;
   }
 }
 
@@ -105,6 +156,16 @@ void AbstractMesh::initialize()
   glGenBuffers(1, &vertex_buffer_);
   glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_);
   glBufferData(GL_ARRAY_BUFFER, vertices_.size() * sizeof(glm::vec3), &vertices_[0], GL_STATIC_DRAW);
+}
+
+bool AbstractMesh::intersects(glm::vec3 point)
+{
+  return aabb_.intersects(point);
+}
+
+bool AbstractMesh::intersects(glm::vec3 origin, glm::vec3 direction, float* t)
+{
+  return aabb_.intersects(origin, direction, t);
 }
 
 TriangleMesh::TriangleMesh() : AbstractMesh()
@@ -147,6 +208,9 @@ TriangleMesh::~TriangleMesh()
 void TriangleMesh::initialize()
 {
   AbstractMesh::initialize();
+
+  aabb_ = BoundingBox(this);
+  this->addChild(&aabb_);
   
   glGenBuffers(1, &normal_buffer_);
   glBindBuffer(GL_ARRAY_BUFFER, normal_buffer_);
@@ -210,6 +274,95 @@ void TriangleMesh::render(glm::mat4 M, GLuint program_ID)
   glDisableVertexAttribArray(1);
 }
 
+BoundingBox::BoundingBox(const AbstractMesh* template_mesh)
+{
+  float max_x = template_mesh->vertices_[0].x;
+  float max_y = template_mesh->vertices_[0].y;
+  float max_z = template_mesh->vertices_[0].z;
+  
+  float min_x = template_mesh->vertices_[0].x;
+  float min_y = template_mesh->vertices_[0].y;
+  float min_z = template_mesh->vertices_[0].z;
+  for (int i = 1; i < template_mesh->vertices_.size(); i++)
+  {
+    max_x = glm::max(max_x, template_mesh->vertices_[i].x);
+    max_y = glm::max(max_y, template_mesh->vertices_[i].y);
+    max_z = glm::max(max_z, template_mesh->vertices_[i].z);
+
+    min_x = glm::min(min_x, template_mesh->vertices_[i].x);
+    min_y = glm::min(min_y, template_mesh->vertices_[i].y);
+    min_z = glm::min(min_z, template_mesh->vertices_[i].z);
+  }
+  max = glm::vec3(max_x, max_y, max_z);
+  min = glm::vec3(min_x, min_y, min_z);
+}
+
+BoundingBox::BoundingBox(const Object3D)
+{
+  
+}
+
+BoundingBox::BoundingBox()
+{
+  min = glm::vec3(0,0,0);
+  max = glm::vec3(0,0,0);
+}
+
+BoundingBox::~BoundingBox()
+{
+  
+}
+
+bool BoundingBox::intersects(glm::vec3 point)
+{
+  return (point.x > min.x &&
+          point.y > min.y &&
+          point.z > min.z &&
+          point.x < max.x &&
+          point.y < max.y &&
+          point.z < max.z);
+}
+
+bool BoundingBox::intersects(glm::vec3 origin, glm::vec3 direction, float* t)
+{
+  // r.dir is unit direction vector of ray
+  glm::vec3 dirfrac(1.0f / direction.x, 1.0f / direction.y, 1.0f / direction.z);
+  // lb is the corner of AABB with minimal coordinates - left bottom, 
+  // rt is maximal corner
+  // r.org is the origin of ray
+  float t1 = (min.x - origin.x)*dirfrac.x;
+  float t2 = (max.x - origin.x)*dirfrac.x;
+  float t3 = (min.y - origin.y)*dirfrac.y;
+  float t4 = (max.y - origin.y)*dirfrac.y;
+  float t5 = (min.z - origin.z)*dirfrac.z;
+  float t6 = (max.z - origin.z)*dirfrac.z;
+
+  float tmin = glm::max(
+    glm::max(glm::min(t1, t2), glm::min(t3, t4)),
+    glm::min(t5, t6));
+  float tmax = glm::min(
+    glm::min(glm::max(t1, t2), glm::max(t3, t4)),
+    glm::max(t5, t6));
+
+  // if tmax < 0, ray (line) is intersecting AABB, but whole AABB is behing us
+  if (tmax < 0)
+  {
+      *t = tmax;
+      return false;
+  }
+
+  // if tmin > tmax, ray doesn't intersect AABB
+  if (tmin > tmax)
+  {
+      *t = tmax;
+      return false;
+  }
+
+  *t = tmin;
+  return true;
+  return false;
+}
+
 AbstractCamera::AbstractCamera()
 {
   transform_matrix_ = glm::lookAt(
@@ -222,7 +375,7 @@ void AbstractCamera::render(glm::mat4 M, GLuint program_ID)
 {
   Object3D::render(M * transform_matrix_, program_ID);
 
-  glm::mat4 V = M * transform_matrix_;
+  glm::mat4 V = glm::inverse(M * transform_matrix_);
   
   glUseProgram(program_ID);
 
@@ -230,7 +383,7 @@ void AbstractCamera::render(glm::mat4 M, GLuint program_ID)
   glUniformMatrix4fv(glGetUniformLocation(program_ID, "P"), 1, GL_FALSE, &projection_transform_matrix_[0][0]);
 }
 
-PerspectiveCamera::PerspectiveCamera(GLFWwindow* window) :
+PerspectiveCamera::PerspectiveCamera(GLFWwindow* window, float fov) :
 AbstractCamera()
 {
   window_ = window;
@@ -244,7 +397,7 @@ AbstractCamera()
     aspect = float(width)/height;
   } 
 
-  projection_transform_matrix_ = glm::perspective(45.0f, aspect, 0.1f, 100.0f);
+  projection_transform_matrix_ = glm::perspective(fov, aspect, 0.1f, 100.0f);
 }
 
 void PerspectiveCamera::render(glm::mat4 M, GLuint program_ID)
@@ -314,26 +467,28 @@ void OrthoCamera::render(
 
 LightSource::LightSource()
 {
-  intensity = 300.0f;
+  intensity = 1;
   color = glm::vec3(1.0, 1.0, 1.0);
-  position = glm::vec3(10.0, 10.0, 10.0);
 }
 
 void LightSource::render(glm::mat4 M, GLuint program_ID)
 {
   Object3D::render(M * transform_matrix_, program_ID);
   
-  glm::vec4 total_position = M * transform_matrix_ * glm::vec4(position.x, position.y, position.z, 1.0f);
+  glm::vec4 global_position = M * getTotalTransform() * glm::vec4(0, 0, 0, 1.0f);
   
   glUseProgram(program_ID);
   
-  glUniform3f(glGetUniformLocation(program_ID, "light.position"),total_position.x,total_position.y, total_position.z);
+  glUniform3f(glGetUniformLocation(program_ID, "light.position"),global_position.x,global_position.y, global_position.z);
   glUniform1f(glGetUniformLocation(program_ID, "light.intensity"), intensity);
   glUniform3f(glGetUniformLocation(program_ID, "light.color"), color.r, color.g, color.b);
 }
 
 //Object3D* SimpleGraphicsEngine::camera_;
 //Object3D* SimpleGraphicsEngine::viewspace_ortho_camera_;
+
+GLFWwindow* SimpleGraphicsEngine::window_;
+Object3D* SimpleGraphicsEngine::scene_;
 
 SimpleGraphicsEngine::SimpleGraphicsEngine()
 {
@@ -552,124 +707,4 @@ void FBO::useFBO(FBO *out, FBO *in1, FBO *in2)
     glBindTexture(GL_TEXTURE_2D, in1->texid_);
   else
     glBindTexture(GL_TEXTURE_2D, 0);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void FBO3D::CHECK_FRAMEBUFFER_STATUS()
-{
-  GLenum status;
-  status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-  if (status != GL_FRAMEBUFFER_COMPLETE)
-    fprintf(stderr, "Framebuffer not complete\n");
-}
-
-FBO3D::FBO3D(int size)
-{
-  size_ = size;
-  
-  // create objects
-  glGenFramebuffers(1, &fb_); // frame buffer id
-  glBindFramebuffer(GL_FRAMEBUFFER, fb_);
-  glGenTextures(1, &texid_);
-  fprintf(stderr, "%i \n", texid_);
-  glBindTexture(GL_TEXTURE_3D, texid_);
-
-
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-
-  glTexStorage3D(GL_TEXTURE_3D, 10, GL_RGBA32F, size, size, size);
-  glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, size, size, size, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-  
-  glGenerateMipmap(GL_TEXTURE_3D); // Allocate the mipmaps
-
-  glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_3D, texid_, 0, 0);
-
-
-  // Renderbuffer
-  // initialize depth renderbuffer
-  glGenRenderbuffers(1, &rb_);
-  glBindRenderbuffer(GL_RENDERBUFFER, rb_);
-  glRenderbufferStorage( GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, size_, size_ );
-  glFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rb_ );
-  CHECK_FRAMEBUFFER_STATUS();
-
-  fprintf(stderr, "Framebuffer object %d\n", fb_);
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
-FBO3D::~FBO3D()
-{
-   //Delete resources
-   glDeleteTextures(1, &texid_);
-   glDeleteRenderbuffersEXT(1, &rb_);
-   //Bind 0, which means render to back buffer, as a result, fb is unbound
-   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-   glDeleteFramebuffersEXT(1, &fb_);
-}
-
-// choose input (textures) and output (FBO)
-void FBO3D::useFBO(FBO3D *out, FBO3D *in1, FBO3D *in2)
-{
-  GLint curfbo;
-
-// This was supposed to catch changes in viewport size and update lastw/lasth.
-// It worked for me in the past, but now it causes problems to I have to
-// fall back to manual updating.
-  glGetIntegerv(GL_FRAMEBUFFER_BINDING, &curfbo);
-  if (curfbo == 0)
-  {
-    GLint viewport[4] = {0,0,0,0};
-    GLint w, h;
-    glGetIntegerv(GL_VIEWPORT, viewport);
-    w = viewport[2] - viewport[0];
-    h = viewport[3] - viewport[1];
-    if ((w > 0) && (h > 0) && (w < 65536) && (h < 65536)) // I don't believe in 64k pixel wide frame buffers for quite some time
-    {
-      lastw = viewport[2] - viewport[0];
-      lasth = viewport[3] - viewport[1];
-    }
-  }
-  
-  if (out != nullptr)
-    glViewport(0, 0, out->size_, out->size_);
-  else
-    glViewport(0, 0, lastw, lasth);
-
-  if (out != nullptr)
-  {
-    glBindFramebuffer(GL_FRAMEBUFFER, out->fb_);
-    glViewport(0, 0, out->size_, out->size_);
-  }
-  else
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  glActiveTexture(GL_TEXTURE1);
-  if (in2 != nullptr)
-    glBindTexture(GL_TEXTURE_3D, in2->texid_);
-  else
-    glBindTexture(GL_TEXTURE_3D, 0);
-  glActiveTexture(GL_TEXTURE0);
-  if (in1 != nullptr)
-    glBindTexture(GL_TEXTURE_3D, in1->texid_);
-  else
-    glBindTexture(GL_TEXTURE_3D, 0);
 }

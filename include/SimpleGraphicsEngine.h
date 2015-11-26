@@ -34,16 +34,40 @@ namespace SGE {
   //! Object3D
   class Object3D {
   public:
-    Object3D() {};
+    Object3D();
     virtual ~Object3D() {};
     void addChild(Object3D* child);
     void removeChild(Object3D* child);
     virtual void render(glm::mat4 M, GLuint program_ID);
 
+    bool intersects(glm::vec3 point);
+    bool intersects(glm::vec3 origin, glm::vec3 direction, float* t);
+    glm::mat4 getTotalTransform();
+
     glm::mat4 transform_matrix_;
-  protected:
-  private:
+
     std::vector<Object3D*> children;
+  protected:
+    Object3D* parent_;
+  private:
+  };
+
+  class AbstractMesh;
+
+  //! An axis aligned bounding box.
+  class BoundingBox : public Object3D{
+  public:
+    BoundingBox(const AbstractMesh* template_mesh);
+    BoundingBox(const Object3D);
+    BoundingBox();
+    ~BoundingBox();
+    glm::vec3 getMin(){return min;}
+    glm::vec3 getMax(){return max;}
+    bool intersects(glm::vec3 point);
+    bool intersects(glm::vec3 origin, glm::vec3 direction, float* t);
+  private:
+    glm::vec3 max;
+    glm::vec3 min;
   };
 
   //! AbstractMesh
@@ -52,11 +76,15 @@ namespace SGE {
     AbstractMesh();
     ~AbstractMesh();
     virtual void render(glm::mat4 M, GLuint program_ID) = 0;
+    bool intersects(glm::vec3 point);
+    bool intersects(glm::vec3 origin, glm::vec3 direction, float* t);
+
+    std::vector<glm::vec3> vertices_;
   protected:
     virtual void initialize() = 0;
-    
-    std::vector<glm::vec3> vertices_;
 
+    BoundingBox aabb_;
+    
     GLuint vertex_array_ID_;
     GLuint vertex_buffer_;
   private:
@@ -84,14 +112,13 @@ namespace SGE {
   public:
     AbstractCamera();
     virtual void render(glm::mat4 M, GLuint program_ID) = 0;
-  protected:  
     glm::mat4 projection_transform_matrix_;
-
+  protected:  
   };
   //! PerspectiveCamera
   class PerspectiveCamera : public AbstractCamera {
   public:
-    PerspectiveCamera(GLFWwindow* window = nullptr);
+    PerspectiveCamera(GLFWwindow* window = nullptr, float fov = 45);
     virtual void render(glm::mat4 M, GLuint program_ID);
   private:
     GLFWwindow* window_;
@@ -124,7 +151,6 @@ namespace SGE {
     
     float intensity;
     glm::vec3 color;
-    glm::vec3 position;
   private:
   };
 
@@ -140,11 +166,11 @@ namespace SGE {
     virtual void render() = 0;
     
     // Probably should be private...
-    GLFWwindow* window_;
+    static GLFWwindow* window_;
     
     double dt_;
     
-    Object3D* scene_;
+    static Object3D* scene_;
     //Object3D* view_space_;
     //Object3D* background_space_;
     //static Object3D* camera_;
@@ -173,22 +199,6 @@ namespace SGE {
     GLuint rb_;
     GLuint depth_;
     int width_, height_;
-  };
-
-  class FBO3D
-  {
-  public:
-    FBO3D(int size);
-    ~FBO3D();
-
-    static void useFBO(FBO3D *out, FBO3D *in1, FBO3D *in2);
-    static void CHECK_FRAMEBUFFER_STATUS();
-
-    GLuint texid_;
-    GLuint fb_;
-    GLuint rb_;
-    GLuint depth_;
-    int size_;
   };
 }
 
