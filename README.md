@@ -3,6 +3,6 @@ Converting mesh data to voxel data and rendering global illumination using cone 
 
 ## Some Screenshots
 
-![](data/screenshots/screenshot2.png "Screenshot")
-![](data/screenshots/screenshot3.png "Screenshot")
-![](data/screenshots/screenshot9.png "Screenshot")
+![](data/screenshots/Screenshot2.png "Screenshot")
+![](data/screenshots/Screenshot3.png "Screenshot")
+![](data/screenshots/Screenshot9.png "Screenshot")
